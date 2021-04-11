@@ -138,20 +138,6 @@
       "GunneryJammingBase": 1
     },
     {
-      "Id": "x5",
-      "UIName": "x5",
-      "Name": "x5 Shots",
-      "Description": "RAC Fires 5 Shots",
-      "isBaseMode": false,
-      "ShotsWhenFired": 2,
-      "RefireModifier": 10,
-      "HeatGenerated": 10,
-      "AIHitChanceCap": 0.3,
-      "FlatJammingChance": 0.4,
-      "GunneryJammingMult": 0.01,
-      "GunneryJammingBase": 1
-    },
-    {
       "Id": "x6",
       "UIName": "x6",
       "Name": "x6 Shots",
@@ -162,6 +148,20 @@
       "HeatGenerated": 15,
       "AIHitChanceCap": 0.4,
       "FlatJammingChance": 0.48,
+      "GunneryJammingMult": 0.01,
+      "GunneryJammingBase": 1
+    },
+    {
+      "Id": "x5",
+      "UIName": "x5",
+      "Name": "x5 Shots",
+      "Description": "RAC Fires 5 Shots",
+      "isBaseMode": false,
+      "ShotsWhenFired": 2,
+      "RefireModifier": 10,
+      "HeatGenerated": 10,
+      "AIHitChanceCap": 0.3,
+      "FlatJammingChance": 0.4,
       "GunneryJammingMult": 0.01,
       "GunneryJammingBase": 1
     }

@@ -15,8 +15,10 @@ try:
                 max_mode_dam = data['Modes'][i]['DamagePerShot']
                 max_dam_mode = i
         except KeyError:
+            print('skipped')
             continue #this skips modes that have no damage
     print('Max Dam Mode ', max_dam_mode,'Max Mode Dam ', max_mode_dam)
+    #this block is working and provides the max damage mode and the max number
         
     #weapon_damage = str(data['Damage'] + max_mode_dam * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])) #damage = damage per shot + max damage mode extra damage * projectilespershot * (shotswhenfiredbase + shotswhenfired in modes + damage in modes)
     #print('Dam ' + weapon_damage)
