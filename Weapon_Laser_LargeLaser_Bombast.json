@@ -154,23 +154,6 @@
       "Instability": 4.3,
       "AccuracyModifier": 1.0,
       "FireTerrainChance": 0.0625
-    },
-    {
-      "Id": "Dmg",
-      "UIName": "DMG",
-	  "Name": "Damage",
-      "Description": "Laser fires in Damage Mode",
-      "isBaseMode": false,
-      "DamagePerShot": 25,
-      "RefireModifier": 1,
-      "HeatGenerated": 10,
-      "MaxRange": -200.0,
-      "ShortRange": -50.0,
-      "MediumRange": -100.0,
-      "LongRange": -150.0,
-      "Instability": 4.3,
-      "AccuracyModifier": 1.0,
-      "FireTerrainChance": 0.0625
     }
   ],
   "statusEffects": [],
