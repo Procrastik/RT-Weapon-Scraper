@@ -1,11 +1,12 @@
 import json
 import traceback
 
-local_file = "E:\RT Analyzation\RT-Analyzation\Weapon_Laser_LargeLaser_Bombast.json"
+local_file = "E:\Roguetech\RogueTech\ExperimentalWeapons\AMS\Weapon_Laser_AMS_CLAN_Advanced.json"
 
 with open(local_file) as f:
     data = json.load(f)
 
+#weapon damage module - pulls the highest damage from base + any available modes and sets value to weapon_damage variable.
 try:
     max_mode_dam = 0 #set mode index of mode highest dam weapon
     max_dam_mode = 0 #set value of highest additional damage in modes
