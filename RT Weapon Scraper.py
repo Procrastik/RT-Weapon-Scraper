@@ -1,7 +1,78 @@
 ##ToDo List
-#add conditions and logging to capture all relevant metrics for weapons and verify JSONS/characters as a side effect
-#add logic to iterate over modes to check for highest value of each 
+#add conditions and logging to capture all relevant metrics for weapons - Mostly Done - and it even verifies JSONS/invalid characters as a side effect!
+#add logic to iterate over modes to check for highest value of each - Done for weapons (maybe should just capture the highest damage mode value of others because frankly we only care about damage, right!??)
+#add checks in modes to indirectfire - DONE
+#add checks for accuracy and evasion ignore (EvasivePipsIgnored and  AccuracyModifier)
+#add max range damage falloff, or even better add damage expected at each range bracket (Weapon Heat/Damage/Stability falls off to {0} of starting value at long range)
+#add mode accuracy bonuses/maluses
 
+
+ #"DamageFalloffStartDistance": 0, - distance where damage starts to change, additive per ammo/mode/weapon.
+ # "DamageFalloffEndDistance": 0, - distance where damage stops to change, additive per ammo/mode/weapon.
+ # "DistantVariance": 0.3, - Distance damage variance addiditve per ammo/mode/weapon
+ # "DistantVarianceReversed": false, - Set is distance damage variance is reversed (mode have priority, than ammo, than weapon)
+ #"DistantVariance": 0.3, - Distance damage variance addiditve per ammo/mode/weapon
+ # "DistantVarianceReversed": false, - Set is distance damage variance is reversed (mode have priority, than ammo, than weapon)
+	
+   #Distance variance logic:
+	#1. If DistantVarianceReversed false
+	#  a) if DistantVariance > 1.0 - (0 <= distance <= DamageFalloffStartDistance) damage coeff = DistantVariance
+	#                       (DamageFalloffStartDistance < distance < DamageFalloffEndDistance)
+#						   damage coeff decrease from DistantVariance(at DamageFalloffStartDistance) to 1(at DamageFalloffEndDistance)
+#	  b) if DistantVariance < 1.0 - (0 <= distance <= DamageFalloffStartDistance) damage coeff = 1
+#	                       (DamageFalloffStartDistance < distance < DamageFalloffEndDistance)
+#						   damage coeff decrease from 1(at DamageFalloffStartDistance) to DistantVariance(at DamageFalloffEndDistance)
+#						   if DamageFalloffStartDistance is 0 assumed to be MediumRange
+#						   if DamageFalloffEndDistance is less than DamageFalloffStartDistance assumed to be MaxRange
+#	2. If DistantVarianceReversed true
+#	  a) if DistantVariance > 1.0 - (0 <= distance <= DamageFalloffStartDistance) damage coeff = 1
+#	                       (DamageFalloffStartDistance < distance < DamageFalloffEndDistance) 
+#						   damage coeff grow from 1(at DamageFalloffStartDistance) to DistantVariance(at DamageFalloffEndDistance)
+#						   (DamageFalloffEndDistance <= distance < MaxRange) damage coeff = DistantVariance
+#	  b) if DistantVariance < 1.0 - (0 <= distance <= DamageFalloffStartDistance) damage coeff = DistantVariance
+#	                       (DamageFalloffStartDistance < distance < DamageFalloffEndDistance) 
+#						   damage coeff grow from DistantVariance(at DamageFalloffStartDistance) to 1(at DamageFalloffEndDistance)
+#						   (DamageFalloffEndDistance <= distance < MaxRange) damage coeff = 1
+#						   if DamageFalloffStartDistance is 0 assumed to be MinRange
+#						   if DamageFalloffEndDistance is less than DamageFalloffStartDistance assumed to be MediumRange	
+
+ #"DistantVariance": 0.1,
+ # "DistantVarianceReversed": true,
+ # "isHeatVariation": true,
+ # "isStabilityVariation": true,
+ # "isDamageVariation": true,
+ # "RangedDmgFalloffType": "Linear",
+ # "DamageFalloffStartDistance": 30,
+#  "DamageFalloffEndDistance": 600,
+
+#public static float DistanceDamageMod(
+ #     this Weapon weapon,
+  #    Vector3 attackPos,
+   #   ICombatant target,
+    #  bool log = true)
+    #{
+    #  float num1 = weapon.DistantVariance();
+     # float num2 = 1f;
+     # float num3 = Vector3.Distance(attackPos, target.get_TargetPosition());
+     # float num4 = weapon.DamageFalloffStartDistance();
+     # if ((double) num4 < (double) CustomAmmoCategories.Epsilon)
+     #   num4 = weapon.get_MediumRange(); #this sets medium range as default if nothing set.
+     # float num5 = weapon.DamageFalloffEndDistance();
+     # if ((double) num5 < (double) num4)
+     #   num5 = weapon.get_MaxRange(); #if nothing set use max range
+     # float num6 = 1f;
+     # if ((double) num5 - (double) num4 > (double) CustomAmmoCategories.Epsilon)
+     #   num6 = (float) (((double) num3 - (double) num4) / ((double) num5 - (double) num4));
+     # if ((double) num1 > 1.0)
+     #   num2 = (double) num3 > (double) num4 ? num1 - weapon.RangedDmgFalloffType(num6) * (num1 - 1f) : num1;
+     # else if ((double) num1 < 1.0) # if in falloff range bracket
+     #   num2 = (double) num3 > (double) num4 ? (float) (1.0 - (double) weapon.RangedDmgFalloffType(num6) * (1.0 - (double) num1)) : 1f;
+     # float num7 = num2;
+     # if (log)
+     #   CustomAmmoCategoriesLog.Log.M.TWL(0, "defId: " + ((MechComponent) weapon).get_defId() + "\n" + string.Format("baseMultiplier: {0}\n", (object) num1) + string.Format("distance: {0}\n", (object) num3) + string.Format("start distance: {0}\n", (object) num4) + string.Format("end distance {0}\n", (object) num5) + string.Format("distanceRatio: {0}\n", (object) num6) + string.Format("result: {0}\n", (object) num7));
+    #  return num7;
+
+#if "DistantVarianceReversed" == False
 
 import os
 import json
@@ -17,7 +88,7 @@ possible_invalid_jsons = []
 df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range'])
 ##
 
-#This iterates through all of the 'location' path from top directory down looking for listed criteria in thr for loop and adds it to list weapon_file_list
+#This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list weapon_file_list
 # r=>root, d=>directories, f=>files
 for r, d, f in os.walk(location):
    for item in f:
@@ -44,16 +115,16 @@ for item in weapon_file_list:
          data = json.load(f)
          current_row = []
          
-         #output string Y
+         #Weapon hardpoint module
          try:
             hardpoint_type = str(data['Category'])
             print(hardpoint_type)
             current_row.append(hardpoint_type)
          except KeyError:
             print('Missing Hardpoint Type')
-            current_row.append('N/A')
+            current_row.append('Handheld')
 
-         #output string Y
+         #Weapon type module
          try:
             weapon_class = str(data['Type'])
             print(weapon_class)
@@ -62,7 +133,7 @@ for item in weapon_file_list:
             print('Missing Weapon Type')
             current_row.append('N/A')
          
-         #output string Y
+         #Weapon name module
          try:
             weapon_name = str(data['Description']['UIName'])
             print(weapon_name)
@@ -70,63 +141,6 @@ for item in weapon_file_list:
          except KeyError:
             print('Missing Weapon Name')
             current_row.append('N/A')
-
-         #output string Y
-         try:
-            indirect_fire = str(data['IndirectFireCapable'])
-            print('Can Indirectfire ' + ' ' + indirect_fire)
-            current_row.append(indirect_fire)
-         except KeyError:
-            print('Missing Indirect Fire boolean')
-            current_row.append('N/A')
-
-         #output float Y
-         try:
-            weapon_tonnage = data['Tonnage']
-            print('Tons ' + str(weapon_tonnage))
-            current_row.append(weapon_tonnage)
-         except:
-            print('Missing Tonnage')
-            current_row.append('N/A')
-
-         #output int Y
-         try:
-            weapon_slots = data['InventorySize']
-            print('Slots ' + str(weapon_slots))
-            current_row.append(weapon_slots)
-         except:
-            print('Missing Weapon Slots')
-            current_row.append('N/A')
-
-         ##add logic to test which mode is has the highest refire! Output int Y
-         try:
-            weapon_recoil = data['RefireModifier'] + data['Modes'][-1]['RefireModifier']
-            print('Recoil ' + str(weapon_recoil))
-            current_row.append(weapon_recoil)
-         except (KeyError, IndexError) as e:
-            try:
-               weapon_recoil = data['RefireModifier']
-               print('No recoil in modes, defaulting to base', 'Recoil ' + str(weapon_recoil))
-               current_row.append(weapon_recoil)
-            except KeyError:
-               print('No Refire Modifier on this weapon')
-               current_row.append(0)
-
-         #OLD Damage module
-         #try:
-            #weapon_damage = str(data['Damage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][-1]['ShotsWhenFired'])) #damage = damage per shot * projectilespershot * (shotswhenfiredbase + shotswhenfired in modes)
-            #print('Dam ' + weapon_damage)
-            #current_row.append(weapon_damage)
-        # except (KeyError, IndexError) as e:
-            #try:
-               #weapon_damage = str(data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired'])) #damage = damage per shot * projectilespershot
-               #print('No damage in modes, defaulting to base', 'Dam ' + weapon_damage)
-               #current_row.append(weapon_damage)
-            #except KeyError:
-               #print('No damage on this weapon!?')
-               #current_row.append('N/A')
-         ##
-
          #weapon damage module - pulls the highest damage from base + any available modes and sets value to weapon_damage variable
          try:
             max_mode_dam = 0 #set mode index of mode highest dam weapon
@@ -178,8 +192,65 @@ for item in weapon_file_list:
             weapon_damage = weapon_damage2
          current_row.append(weapon_damage)
          print(weapon_damage, weapon_damage2)
+
+         #Indirectfire check module
+         try:
+            for i in range(len(data['Modes'])): #for loop to iterate over the number of Modes found
+                  print('Mode ', i)
+                  try:
+                     if data['Modes'][i]['IndirectFireCapable'] == True:
+                        indirect_fire = 'True'
+                        break                    
+                  except KeyError: #if no IndirectFireCapable in mode found
+                        traceback.print_exc()
+                        try:
+                           indirect_fire = str(data['IndirectFireCapable'])
+                        except KeyError:
+                           print('Missing Indirect Fire boolean')
+                           indirect_fire = 'False'
+         except KeyError:
+            try:
+               indirect_fire = str(data['IndirectFireCapable'])
+            except KeyError:
+               print('Missing Indirect Fire boolean')
+               indirect_fire = 'False'
+         current_row.append(indirect_fire)
+        
+         #Tonnage check module
+         try:
+            weapon_tonnage = data['Tonnage']
+            print('Tons ' + str(weapon_tonnage))
+            current_row.append(weapon_tonnage)
+            if weapon_tonnage > 50: #this filters deprecated weapons that are 100 to 6666 tons
+               continue
+         except:
+            print('Missing Tonnage')
+            current_row.append('N/A')
+
+         #Weapon slot size module
+         try:
+            weapon_slots = data['InventorySize']
+            print('Slots ' + str(weapon_slots))
+            current_row.append(weapon_slots)
+         except:
+            print('Missing Weapon Slots')
+            current_row.append('N/A')
+
+         ##add logic to test which mode is has the highest refire! Output int Y
+         try:
+            weapon_recoil = data['RefireModifier'] + data['Modes'][max_dam_mode]['RefireModifier']
+            print('Recoil ' + str(weapon_recoil))
+            current_row.append(weapon_recoil)
+         except (KeyError, IndexError) as e:
+            try:
+               weapon_recoil = data['RefireModifier']
+               print('No recoil in modes, defaulting to base', 'Recoil ' + str(weapon_recoil))
+               current_row.append(weapon_recoil)
+            except KeyError:
+               print('No Refire Modifier on this weapon')
+               current_row.append(0)
          
-         #output int Y
+         #Damage variance module
          try:
             weapon_damage_variance = data['DamageVariance']
             print('Dam Var ' + str(weapon_damage_variance))
@@ -306,7 +377,8 @@ for item in weapon_file_list:
             traceback.print_exc()
          
          print('Min ' + str(weapon_range_min)  + ' Short ' + str(weapon_range_short) + ' Medium ' + str(weapon_range_medium) + ' Long ' + str(weapon_range_long) + ' Max ' + str(weapon_range_max))
-
+         #l.insert(newindex, l.pop(oldindex))
+         current_row.insert(7,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
          df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range']))
          print(df2)
          df = df.append(df2)
@@ -327,57 +399,12 @@ with open("possible invalid JSON.txt", "w") as output:
        output.write(str(item) + '\n')
 ##
 df.to_excel('RT Weaponlist.xlsx',sheet_name='Weapons')
-# try:
-         #   bonus_descriptions = ''
-         #   for i in data['Custom']['BonusDescriptions']['Bonuses']:
-         #      bonus_descriptions += i
-         #   print(bonus_descriptions)
-         #   bonus_descriptions = bonus_descriptions.join(bonus_descriptions)
-         #   current_row.append(bonus_descriptions)
-        # except (KeyError, IndexError) as e:
-         #   print('No BonusDescriptions found.')   
-         #   current_row.append('N/A')    
-
-      #start of data frame constructor
-      #print(current_row)
 
 #use this to write to json without unicode errors? future use?
 #with open('s1Results/map.json', 'wb') as f:
  #   jdata = json.dumps(r.json(), indent=4, ensure_ascii=False)
   #  f.write(jdata.encode())
 
-# class pandas.DataFrame(data=None, index=None, columns=None, dtype=None, copy=False)[source]¶
-
- #   Two-dimensional, size-mutable, potentially heterogeneous tabular data.
-
-  #  Data structure also contains labeled axes (rows and columns). Arithmetic operations align on both row and column labels. Can be thought of as a dict-like container for Series objects. The primary pandas data structure.
-
-   # Parameters
-
-    #    datandarray (structured or homogeneous), Iterable, dict, or DataFrame
-
-     #       Dict can contain Series, arrays, constants, dataclass or list-like objects. If data is a dict, column order follows insertion-order.
-
-      #      Changed in version 0.25.0: If data is a list of dicts, column order follows insertion-order.
-       # indexIndex or array-like
-#
- #           Index to use for resulting frame. Will default to RangeIndex if no indexing information part of input data and no index provided.
-  #      columnsIndex or array-like
-#
- #           Column labels to use for resulting frame. Will default to RangeIndex (0, 1, 2, …, n) if no column labels are provided.
-  #      dtypedtype, default None
-#
- #           Data type to force. Only a single dtype is allowed. If None, infer.
-  #      copybool, default False
-#
- #           Copy data from inputs. Only affects DataFrame / 2d ndarray input.
-
-#example df creation
-#>>> df = pandas.DataFrame(data=None,index=['Medium Laser','Small Laser'],columns=['one','five'],dtype=None,copy=False)
-#>>> print(df)
-#              one five
-#Medium Laser  NaN  NaN
-#Small Laser   NaN  NaN
 
 
 #OLD Damage module

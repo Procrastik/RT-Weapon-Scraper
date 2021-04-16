@@ -1,7 +1,7 @@
 import json
 import traceback
 
-local_file = "E:\Roguetech\RogueTech\ExperimentalWeapons\AMS\Weapon_Laser_AMS_CLAN_Advanced.json"
+local_file = "E:\Roguetech\RogueTech\RogueModuleTech\VanillaWeapons\Weapon_Autocannon_AC10_0-STOCK.json"
 
 with open(local_file) as f:
     data = json.load(f)
@@ -57,3 +57,4 @@ if weapon_damage2 > weapon_damage:#checks the max damage mode and the max shots 
     weapon_damage = weapon_damage2
 
 print(weapon_damage, weapon_damage2)
+print('Tonnage ', data['Tonnage'] )
