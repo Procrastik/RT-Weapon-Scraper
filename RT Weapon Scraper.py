@@ -17,7 +17,7 @@ file_keyword_exclusion_list = ['Quirks', 'Melee', 'Special', 'Turret', 'Ambush']
 weapon_file_list = []
 excepted_files = []
 possible_invalid_jsons = []
-df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range'])
+df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list weapon_file_list
@@ -309,9 +309,70 @@ for item in weapon_file_list:
             traceback.print_exc()
          
          print('Min ' + str(weapon_range_min)  + ' Short ' + str(weapon_range_short) + ' Medium ' + str(weapon_range_medium) + ' Long ' + str(weapon_range_long) + ' Max ' + str(weapon_range_max))
+
+         range_list = [weapon_range_min, weapon_range_short, weapon_range_medium, weapon_range_long, weapon_range_max]
+         range_falloff_ratio_list = [0,0,0,0,0] #this is not being populated
+         range_falloff_total_damage = [0,0,0,0,0]
+
+         try: 
+            if data['isDamageVariation']: #verify weapon uses damage variance
+               try:
+                  if data['DistantVarianceReversed'] == False:
+                        if data['DistantVariance'] > 0:
+                           ##INPUT PROTECTION
+                           try:
+                              if data['DamageFalloffStartDistance'] > 1/1000:
+                                    falloff_start = data['DamageFalloffStartDistance']
+                              elif data['DamageFalloffStartDistance'] < 1/1000:
+                                    print('Falloff start value is zero, using medium value')
+                                    falloff_start = weapon_range_medium
+                           except KeyError:
+                              print('No falloff start distance key, using medium value')
+                              falloff_start = weapon_range_medium
+                           try:
+                              if data['DamageFalloffEndDistance'] < falloff_start:
+                                    falloff_end = weapon_range_max
+                              elif data['DamageFalloffEndDistance'] > falloff_start:
+                                    falloff_end = data['DamageFalloffEndDistance']
+                           except KeyError:
+                              print('No falloff end distance, using max value')
+                              falloff_end = weapon_range_max
+                        ##GET RATIO
+                        #for i, j, k in zip(range_list, range_falloff_ratio_list, range_falloff_total_damage):
+                           #if (falloff_end - falloff_start > 1/1000):
+                              # range_falloff_ratio_list[j] = ((i - falloff_start) / (falloff_end - falloff_start))
+                        j = 0
+                        for i in range_list:
+                           if (falloff_end - falloff_start > 1/1000):
+                              range_falloff_ratio_list[j] = ((i - falloff_start) / (falloff_end - falloff_start)) 
+                        ##DEFAULT
+                           if i < falloff_start:
+                              print('Range has no damage falloff')
+                              current_row.append(weapon_damage)
+                           else: #DO THE THING                  
+                              current_row.append(weapon_damage * (1.0 - range_falloff_ratio_list[j] * (1.0 - data['DistantVariance'])))
+                              print('Adding damage')
+                           j += 1
+                                 
+                  elif data['DistantVarianceReversed'] == True:
+                              #reversed tree
+                     print('Im not done yet!')
+                     for i in range(5):
+                        current_row.append(weapon_damage)
+               except KeyError:
+                  print('No DistantVarianceReversed key on weapon!')
+                  for i in range(5):
+                     current_row.append(weapon_damage)
+         except KeyError:
+            print('No damage variance, using normal values')
+            for i in range(5):
+               current_row.append(weapon_damage)
+
+
          #l.insert(newindex, l.pop(oldindex))
          current_row.insert(7,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
-         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range']))
+
+         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
          print(df2)
          df = df.append(df2)
       except UnicodeDecodeError:
