@@ -6,74 +6,6 @@
 #add max range damage falloff, or even better add damage expected at each range bracket (Weapon Heat/Damage/Stability falls off to {0} of starting value at long range)
 #add mode accuracy bonuses/maluses
 
-
- #"DamageFalloffStartDistance": 0, - distance where damage starts to change, additive per ammo/mode/weapon.
- # "DamageFalloffEndDistance": 0, - distance where damage stops to change, additive per ammo/mode/weapon.
- # "DistantVariance": 0.3, - Distance damage variance addiditve per ammo/mode/weapon
- # "DistantVarianceReversed": false, - Set is distance damage variance is reversed (mode have priority, than ammo, than weapon)
- #"DistantVariance": 0.3, - Distance damage variance addiditve per ammo/mode/weapon
- # "DistantVarianceReversed": false, - Set is distance damage variance is reversed (mode have priority, than ammo, than weapon)
-	
-   #Distance variance logic:
-	#1. If DistantVarianceReversed false
-	#  a) if DistantVariance > 1.0 - (0 <= distance <= DamageFalloffStartDistance) damage coeff = DistantVariance
-	#                       (DamageFalloffStartDistance < distance < DamageFalloffEndDistance)
-#						   damage coeff decrease from DistantVariance(at DamageFalloffStartDistance) to 1(at DamageFalloffEndDistance)
-#	  b) if DistantVariance < 1.0 - (0 <= distance <= DamageFalloffStartDistance) damage coeff = 1
-#	                       (DamageFalloffStartDistance < distance < DamageFalloffEndDistance)
-#						   damage coeff decrease from 1(at DamageFalloffStartDistance) to DistantVariance(at DamageFalloffEndDistance)
-#						   if DamageFalloffStartDistance is 0 assumed to be MediumRange
-#						   if DamageFalloffEndDistance is less than DamageFalloffStartDistance assumed to be MaxRange
-#	2. If DistantVarianceReversed true
-#	  a) if DistantVariance > 1.0 - (0 <= distance <= DamageFalloffStartDistance) damage coeff = 1
-#	                       (DamageFalloffStartDistance < distance < DamageFalloffEndDistance) 
-#						   damage coeff grow from 1(at DamageFalloffStartDistance) to DistantVariance(at DamageFalloffEndDistance)
-#						   (DamageFalloffEndDistance <= distance < MaxRange) damage coeff = DistantVariance
-#	  b) if DistantVariance < 1.0 - (0 <= distance <= DamageFalloffStartDistance) damage coeff = DistantVariance
-#	                       (DamageFalloffStartDistance < distance < DamageFalloffEndDistance) 
-#						   damage coeff grow from DistantVariance(at DamageFalloffStartDistance) to 1(at DamageFalloffEndDistance)
-#						   (DamageFalloffEndDistance <= distance < MaxRange) damage coeff = 1
-#						   if DamageFalloffStartDistance is 0 assumed to be MinRange
-#						   if DamageFalloffEndDistance is less than DamageFalloffStartDistance assumed to be MediumRange	
-
- #"DistantVariance": 0.1,
- # "DistantVarianceReversed": true,
- # "isHeatVariation": true,
- # "isStabilityVariation": true,
- # "isDamageVariation": true,
- # "RangedDmgFalloffType": "Linear",
- # "DamageFalloffStartDistance": 30,
-#  "DamageFalloffEndDistance": 600,
-
-#public static float DistanceDamageMod(
- #     this Weapon weapon,
-  #    Vector3 attackPos,
-   #   ICombatant target,
-    #  bool log = true)
-    #{
-    #  float num1 = weapon.DistantVariance();
-     # float num2 = 1f;
-     # float num3 = Vector3.Distance(attackPos, target.get_TargetPosition());
-     # float num4 = weapon.DamageFalloffStartDistance();
-     # if ((double) num4 < (double) CustomAmmoCategories.Epsilon)
-     #   num4 = weapon.get_MediumRange(); #this sets medium range as default if nothing set.
-     # float num5 = weapon.DamageFalloffEndDistance();
-     # if ((double) num5 < (double) num4)
-     #   num5 = weapon.get_MaxRange(); #if nothing set use max range
-     # float num6 = 1f;
-     # if ((double) num5 - (double) num4 > (double) CustomAmmoCategories.Epsilon)
-     #   num6 = (float) (((double) num3 - (double) num4) / ((double) num5 - (double) num4));
-     # if ((double) num1 > 1.0)
-     #   num2 = (double) num3 > (double) num4 ? num1 - weapon.RangedDmgFalloffType(num6) * (num1 - 1f) : num1;
-     # else if ((double) num1 < 1.0) # if in falloff range bracket
-     #   num2 = (double) num3 > (double) num4 ? (float) (1.0 - (double) weapon.RangedDmgFalloffType(num6) * (1.0 - (double) num1)) : 1f;
-     # float num7 = num2;
-     # if (log)
-     #   CustomAmmoCategoriesLog.Log.M.TWL(0, "defId: " + ((MechComponent) weapon).get_defId() + "\n" + string.Format("baseMultiplier: {0}\n", (object) num1) + string.Format("distance: {0}\n", (object) num3) + string.Format("start distance: {0}\n", (object) num4) + string.Format("end distance {0}\n", (object) num5) + string.Format("distanceRatio: {0}\n", (object) num6) + string.Format("result: {0}\n", (object) num7));
-    #  return num7;
-
-#if "DistantVarianceReversed" == False
-
 import os
 import json
 import traceback
@@ -85,7 +17,7 @@ file_keyword_exclusion_list = ['Quirks', 'Melee', 'Special', 'Turret', 'Ambush']
 weapon_file_list = []
 excepted_files = []
 possible_invalid_jsons = []
-df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range'])
+df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list weapon_file_list
@@ -377,9 +309,70 @@ for item in weapon_file_list:
             traceback.print_exc()
          
          print('Min ' + str(weapon_range_min)  + ' Short ' + str(weapon_range_short) + ' Medium ' + str(weapon_range_medium) + ' Long ' + str(weapon_range_long) + ' Max ' + str(weapon_range_max))
+
+         range_list = [weapon_range_min, weapon_range_short, weapon_range_medium, weapon_range_long, weapon_range_max]
+         range_falloff_ratio_list = [0,0,0,0,0] #this is not being populated
+         range_falloff_total_damage = [0,0,0,0,0]
+
+         try: 
+            if data['isDamageVariation']: #verify weapon uses damage variance
+               try:
+                  if data['DistantVarianceReversed'] == False:
+                        if data['DistantVariance'] > 0:
+                           ##INPUT PROTECTION
+                           try:
+                              if data['DamageFalloffStartDistance'] > 1/1000:
+                                    falloff_start = data['DamageFalloffStartDistance']
+                              elif data['DamageFalloffStartDistance'] < 1/1000:
+                                    print('Falloff start value is zero, using medium value')
+                                    falloff_start = weapon_range_medium
+                           except KeyError:
+                              print('No falloff start distance key, using medium value')
+                              falloff_start = weapon_range_medium
+                           try:
+                              if data['DamageFalloffEndDistance'] < falloff_start:
+                                    falloff_end = weapon_range_max
+                              elif data['DamageFalloffEndDistance'] > falloff_start:
+                                    falloff_end = data['DamageFalloffEndDistance']
+                           except KeyError:
+                              print('No falloff end distance, using max value')
+                              falloff_end = weapon_range_max
+                        ##GET RATIO
+                        #for i, j, k in zip(range_list, range_falloff_ratio_list, range_falloff_total_damage):
+                           #if (falloff_end - falloff_start > 1/1000):
+                              # range_falloff_ratio_list[j] = ((i - falloff_start) / (falloff_end - falloff_start))
+                        j = 0
+                        for i in range_list:
+                           if (falloff_end - falloff_start > 1/1000):
+                              range_falloff_ratio_list[j] = ((i - falloff_start) / (falloff_end - falloff_start)) 
+                        ##DEFAULT
+                           if i < falloff_start:
+                              print('Range has no damage falloff')
+                              current_row.append(weapon_damage)
+                           else: #DO THE THING                  
+                              current_row.append(weapon_damage * (1.0 - range_falloff_ratio_list[j] * (1.0 - data['DistantVariance'])))
+                              print('Adding damage')
+                           j += 1
+                                 
+                  elif data['DistantVarianceReversed'] == True:
+                              #reversed tree
+                     print('Im not done yet!')
+                     for i in range(5):
+                        current_row.append(weapon_damage)
+               except KeyError:
+                  print('No DistantVarianceReversed key on weapon!')
+                  for i in range(5):
+                     current_row.append(weapon_damage)
+         except KeyError:
+            print('No damage variance, using normal values')
+            for i in range(5):
+               current_row.append(weapon_damage)
+
+
          #l.insert(newindex, l.pop(oldindex))
          current_row.insert(7,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
-         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range']))
+
+         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
          print(df2)
          df = df.append(df2)
       except UnicodeDecodeError:
