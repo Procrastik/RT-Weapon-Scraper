@@ -1,10 +1,10 @@
 ##ToDo List
-#add conditions and logging to capture all relevant metrics for weapons - Mostly Done - and it even verifies JSONS/invalid characters as a side effect!
-#add logic to iterate over modes to check for highest value of each - Done for weapons (maybe should just capture the highest damage mode value of others because frankly we only care about damage, right!??)
-#add checks in modes to indirectfire - DONE
 #add checks for accuracy and evasion ignore (EvasivePipsIgnored and  AccuracyModifier)
-#add max range damage falloff, or even better add damage expected at each range bracket (Weapon Heat/Damage/Stability falls off to {0} of starting value at long range)
+#add max range damage falloff, or even better add damage expected at each range bracket (Weapon Heat/Damage/Stability falls off to {0} of starting value at long range) Done for standard, need to add for reversed
 #add mode accuracy bonuses/maluses
+
+#OPTIMIZATION
+#Change for loop iterator for each file to check for modes at the start of the loop and set a variable has_modes, can call this for each check to save time/cycles
 
 import os
 import json
@@ -17,7 +17,7 @@ file_keyword_exclusion_list = ['Quirks', 'Melee', 'Special', 'Turret', 'Ambush']
 weapon_file_list = []
 excepted_files = []
 possible_invalid_jsons = []
-df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
+df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list weapon_file_list
@@ -207,7 +207,7 @@ for item in weapon_file_list:
 
          ##add logic here to test which mode has the highest heat damage! output int
          try:
-            weapon_heat_damage = data['HeatDamage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][-1]['ShotsWhenFired']) #heat damage = heat damage per shot * projectilespershot * (shotswhenfiredbase + shotswhenfired in modes)
+            weapon_heat_damage = data['HeatDamage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #heat damage = heat damage per shot * projectilespershot * (shotswhenfiredbase + shotswhenfired in modes)
             print('Heat dam ' + str(weapon_heat_damage))
             current_row.append(weapon_heat_damage)
          except (KeyError, IndexError) as e:   
@@ -221,7 +221,7 @@ for item in weapon_file_list:
 
          ##add logic here to test which mode has the highest firing heat! output int
          try:
-            weapon_firing_heat = data['HeatGenerated'] + data['Modes'][-1]['HeatGenerated']
+            weapon_firing_heat = data['HeatGenerated'] + data['Modes'][max_dam_mode]['HeatGenerated']
             print('Firing Heat ' + str(weapon_firing_heat))
             current_row.append(weapon_firing_heat)
          except (KeyError, IndexError) as e:
@@ -237,7 +237,7 @@ for item in weapon_file_list:
          try:
             weapon_flat_jam = data['FlatJammingChance'] #FlatJammingChance is handled backwards to ShotsWhenFired. Most mode weapons don't have a base FlatJammingChance key and ONLY have them in the modes. Check for base FIRST then check for modes based on that.
             try:
-               weapon_flat_jam = (data['FlatJammingChance'] + data['Modes'][-1]['FlatJammingChance'] * 100)  
+               weapon_flat_jam = (data['FlatJammingChance'] + data['Modes'][max_dam_mode]['FlatJammingChance'] * 100)  
                print('Flat jamming chance ' + str(weapon_flat_jam))
                current_row.append(weapon_flat_jam)
             except (KeyError, IndexError) as e:
@@ -246,12 +246,24 @@ for item in weapon_file_list:
                current_row.append(weapon_flat_jam)
          except KeyError:
             try:
-               weapon_flat_jam = (data['Modes'][-1]['FlatJammingChance'] * 100)
+               weapon_flat_jam = (data['Modes'][max_dam_mode]['FlatJammingChance'] * 100)
                print('No base flat jamming chance key, using modes ' + str(weapon_flat_jam) + '%')
                current_row.append(weapon_flat_jam)
             except (KeyError, IndexError) as e:
                print('No flat jamming chance on this weapon.')
                current_row.append(0)
+
+         #weapon can misfire in max damage mode?
+         try:
+            weapon_misfire = str(data['DamageOnJamming'])
+            try:
+               weapon_misfire = str(data['Modes'][max_dam_mode]['DamageOnJamming'])
+            except KeyError:
+               print('Weapon has no modes, using base')
+         except KeyError:
+            print('Weapon has no misfire')
+            weapon_misfire = 'False'          
+         current_row.append(weapon_misfire)
 
          try:
             weapon_damage_per_heat = "{:.2f}".format(float(weapon_damage)/(float(weapon_firing_heat)))       
@@ -259,7 +271,7 @@ for item in weapon_file_list:
             current_row.append(weapon_damage_per_heat)
          except ZeroDivisionError:
             print('Divide by Zero!')
-            current_row.append(0)
+            current_row.append('0')
 
          try:
             weapon_damage_per_slot = "{:.2f}".format(float(weapon_damage)/(float(weapon_slots)))
@@ -267,7 +279,7 @@ for item in weapon_file_list:
             current_row.append(weapon_damage_per_slot)
          except ZeroDivisionError:
             print('Divide by Zero!')
-            current_row.append(0)
+            current_row.append('0')
 
          try:
             weapon_damage_per_ton = "{:.2f}".format(float(weapon_damage)/(float(weapon_tonnage)))
@@ -275,7 +287,7 @@ for item in weapon_file_list:
             current_row.append(weapon_damage_per_ton)
          except ZeroDivisionError:
             print('Divide by Zero!')
-            current_row.append(0)
+            current_row.append('0')
 
          #output int
          try:
@@ -338,9 +350,6 @@ for item in weapon_file_list:
                               print('No falloff end distance, using max value')
                               falloff_end = weapon_range_max
                         ##GET RATIO
-                        #for i, j, k in zip(range_list, range_falloff_ratio_list, range_falloff_total_damage):
-                           #if (falloff_end - falloff_start > 1/1000):
-                              # range_falloff_ratio_list[j] = ((i - falloff_start) / (falloff_end - falloff_start))
                         j = 0
                         for i in range_list:
                            if (falloff_end - falloff_start > 1/1000):
@@ -372,7 +381,7 @@ for item in weapon_file_list:
          #l.insert(newindex, l.pop(oldindex))
          current_row.insert(7,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
 
-         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
+         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
          print(df2)
          df = df.append(df2)
       except UnicodeDecodeError:
