@@ -10,6 +10,8 @@ import os
 import json
 import traceback
 import pandas
+import time
+time1 = time.time()#this is simply to test time efficiency
 
 #change location variable to point to root of install location you want to analize.
 location = 'E:\Roguetech\RogueTech'
@@ -51,10 +53,14 @@ for item in weapon_file_list:
          try:
             hardpoint_type = str(data['Category'])
             print(hardpoint_type)
-            current_row.append(hardpoint_type)
          except KeyError:
             print('Missing Hardpoint Type')
-            current_row.append('Handheld')
+            try:
+                hardpoint_type = str(data['weaponCategoryID'])
+            except KeyError:
+               print('Weapon has no Type?')
+               hardpoint_type = 'N/A'
+         current_row.append(hardpoint_type)
 
          #Weapon type module
          try:
@@ -261,8 +267,21 @@ for item in weapon_file_list:
             except KeyError:
                print('Weapon has no modes, using base')
          except KeyError:
-            print('Weapon has no misfire')
-            weapon_misfire = 'False'          
+            try:
+               if 'wr-damage_when_jam' in data['ComponentTags']['items']:
+                  weapon_misfire = 'True'
+               else:
+                  weapon_misfire = 'False'
+            except KeyError:
+               print('No jamming on this weapon')
+               weapon_misfire = 'False'
+         if weapon_misfire == 'False':
+            try:
+               for i in data['Custom']['BonusDescriptions']['Bonuses']:
+                  if 'Explodium' in i: #this verifies that the weapon descriptions do not list misfires when traits do not have them
+                     excepted_files.append(item)
+            except KeyError:
+               print('No Custom categories or BonusDescriptions')
          current_row.append(weapon_misfire)
 
          try:
@@ -401,6 +420,7 @@ with open("possible invalid JSON.txt", "w") as output:
        output.write(str(item) + '\n')
 ##
 df.to_excel('RT Weaponlist.xlsx',sheet_name='Weapons')
+print('Parsed in', time.time() - time1, 'seconds')
 
 #use this to write to json without unicode errors? future use?
 #with open('s1Results/map.json', 'wb') as f:
