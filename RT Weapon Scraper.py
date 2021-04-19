@@ -385,8 +385,38 @@ for item in weapon_file_list:
                   elif data['DistantVarianceReversed'] == True:
                               #reversed tree
                      print('Im not done yet!')
-                     for i in range(5):
-                        current_row.append(weapon_damage)
+                     try:
+                        if data['DamageFalloffStartDistance'] > 1/1000:
+                           falloff_start = data['DamageFalloffStartDistance']
+                        else:
+                           print('Falloff start value is zero, using minimum value')
+                           falloff_start = weapon_range_min
+                     except KeyError:
+                        print('No falloff start distance key, using minimum value')
+                        falloff_start = weapon_range_min
+                     
+                     try:
+                        if data['DamageFalloffEndDistance'] < falloff_start:
+                           falloff_end = weapon_range_medium
+                        else:
+                           falloff_end = data['DamageFalloffEndDistance']
+                        print('Falloff start ', falloff_start,'Falloff end ', falloff_end)
+                     except KeyError:
+                        print('No falloff end distance, using medium value')
+                        falloff_end = weapon_range_medium
+                     ##GET RATIO
+                     j = 0
+                     for i in range_list:
+                        if (i <= falloff_end and falloff_end - falloff_start > 1/1000):
+                           range_falloff_ratio_list[j] = ((i - falloff_start) / (falloff_end - falloff_start))
+                     ##DEFAULT
+                        if i < falloff_start:
+                           print('Range has no damage falloff')
+                           current_row.append(weapon_damage)
+                        else: #DO THE THING                  
+                           current_row.append(weapon_damage * (data['DistantVariance'] + range_falloff_ratio_list[j] * (1.0 - data['DistantVariance'])))
+                           print('Adding reversed damage')
+                        j += 1
                except KeyError:
                   print('No DistantVarianceReversed key on weapon!')
                   for i in range(5):
