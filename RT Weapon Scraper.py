@@ -1,8 +1,7 @@
 ##ToDo List
-#add checks for accuracy and evasion ignore (EvasivePipsIgnored and  AccuracyModifier)
-#add max range damage falloff, or even better add damage expected at each range bracket (Weapon Heat/Damage/Stability falls off to {0} of starting value at long range) Done for standard, need to add for reversed
-#add mode accuracy bonuses/maluses
-#check UAC weapons, not counting extra rounds fired yet.
+
+
+
 
 #OPTIMIZATION
 #Change for loop iterator for each file to check for modes at the start of the loop and set a variable has_modes, can call this for each check to save time/cycles
@@ -20,7 +19,7 @@ file_keyword_exclusion_list = ['Quirks', 'Melee', 'Special', 'Turret', 'Ambush']
 weapon_file_list = []
 excepted_files = []
 possible_invalid_jsons = []
-df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
+df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list weapon_file_list
@@ -84,7 +83,7 @@ for item in weapon_file_list:
          #weapon damage module - pulls the highest damage from base + any available modes and sets value to weapon_damage variable
          try:
             max_mode_dam = 0 #set mode index of mode highest dam weapon
-            max_dam_mode = 0 #set value of highest additional damage in modes
+            max_dam_mode = 0  #set value of highest additional damage in modes
             weapon_damage = 0 #Damage modes loop max damage value
             for i in range(len(data['Modes'])): #for loop to iterate over the number of Modes found
                print('Damage mode', i)
@@ -322,6 +321,24 @@ for item in weapon_file_list:
             print('Divide by Zero!')
             current_row.append(0)
 
+         #Accuracy bonus, negative is better
+         try:
+            weapon_accuracy_mod = data['AccuracyModifier']
+            print(weapon_accuracy_mod)
+         except KeyError:
+            print('Missing Base Accuracy Type')
+            weapon_accuracy_mod = 0
+         current_row.append(weapon_accuracy_mod)
+
+         #Evasion ignore, positive is better
+         try:
+            weapon_evasion_ignore = data['EvasivePipsIgnored']
+            print(weapon_evasion_ignore)
+         except KeyError:
+            print('Missing Base Accuracy Type')
+            weapon_evasion_ignore = 0
+         current_row.append(weapon_evasion_ignore)
+
          #output int
          try:
             weapon_range_min = data['MinRange']
@@ -444,7 +461,7 @@ for item in weapon_file_list:
          #l.insert(newindex, l.pop(oldindex))
          current_row.insert(7,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
 
-         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
+         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
          print(df2)
          df = df.append(df2)
       except UnicodeDecodeError:
