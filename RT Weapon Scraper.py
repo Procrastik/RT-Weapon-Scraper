@@ -93,16 +93,14 @@ for item in weapon_file_list:
                         max_dam_mode = i
                      try:
                         if data['Modes'][i]['ShotsWhenFired']:#check for ShotsWhenFired in mode
-                           weapon_damage = data['Damage'] + max_mode_dam * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])
+                           weapon_damage = (data['Damage'] + max_mode_dam) * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])
                      except KeyError:
-                        traceback.print_exc()
-                        weapon_damage = data['Damage'] + max_mode_dam * data['ProjectilesPerShot'] * data['ShotsWhenFired']
+                        weapon_damage = (data['Damage'] + max_mode_dam) * data['ProjectilesPerShot'] * data['ShotsWhenFired']
                except KeyError: #if no DamagePerShot in mode found
-                     traceback.print_exc()
-                     print('skipped')
+                     print('No DamagePerShot in modes, reverting to base values')
+                     weapon_damage = data['Damage'] * data['ProjectilesPerShot'] * data['ShotsWhenFired']
          except KeyError: #removed indexerror as this should not throw one. This will catch errors when a weapon has no modes.
-            print('No modes. Reverting to base values.')
-            traceback.print_exc()
+            print('No modes, reverting to base values')
             weapon_damage = data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired']) #damage = damage per shot * projectilespershot
 
          try:
@@ -123,15 +121,14 @@ for item in weapon_file_list:
                         traceback.print_exc()
                except:
                   traceback.print_exc()
-                  print('skipped')   
+                  print('No additional ShotsWhenFired found in modes, reverting to base')   
          except KeyError: #removed indexerror as this should not throw one. This will catch errors when a weapon has no modes.
             print('No modes. Reverting to base values.')
             weapon_damage2 = data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired']) #damage = damage per shot * projectilespershot
-
+         print('DMG Modes ' + str(weapon_damage),' Shots Modes ', str(weapon_damage2))
          if weapon_damage2 > weapon_damage:#checks the max damage mode and the max shots mode loop max damage values against each other and sets the highest 
             weapon_damage = weapon_damage2
          current_row.append(weapon_damage)
-         print(weapon_damage, weapon_damage2)
 
          #Indirectfire check module
          try:
