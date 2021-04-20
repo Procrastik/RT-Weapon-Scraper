@@ -1,7 +1,7 @@
 import json
 import traceback
 
-local_file = "E:\RT Analyzation\RT-Analyzation\Weapon_Gauss_RAILGUN.json"
+local_file = "E:\Roguetech\RogueTech\RogueModuleTech\Quirks\Weapon\Weapon_Gauss_Magshot_Battery_Clan.json"
 
 with open(local_file) as f:
     data = json.load(f)
