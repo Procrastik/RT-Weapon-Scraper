@@ -15,16 +15,17 @@ time1 = time.time()#this is simply to test time efficiency
 
 #change location variable to point to root of install location you want to analize.
 location = 'E:\Roguetech\RogueTech'
-file_keyword_exclusion_list = ['Quirks', 'Melee', 'Special', 'Turret', 'Ambush']
+file_keyword_exclusion_list = ['Quirks', 'Melee', 'Special', 'Turret', 'Ambush','Infantry']
 weapon_file_list = []
 excepted_files = []
 possible_invalid_jsons = []
-df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
+df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list weapon_file_list
 # r=>root, d=>directories, f=>files
 for r, d, f in os.walk(location):
+   print(r)
    for item in f:
       file_in_exclusion_list = False
       if 'Weapon_' in item:
@@ -34,6 +35,9 @@ for r, d, f in os.walk(location):
             for i in file_keyword_exclusion_list:
                print(i, file_in_exclusion_list)
                if i in item:
+                  file_in_exclusion_list = True
+                  continue
+               elif i in r:
                   file_in_exclusion_list = True
                   continue
             if not file_in_exclusion_list:
@@ -128,6 +132,7 @@ for item in weapon_file_list:
          print('DMG Modes ' + str(weapon_damage),' Shots Modes ', str(weapon_damage2))
          if weapon_damage2 > weapon_damage:#checks the max damage mode and the max shots mode loop max damage values against each other and sets the highest 
             weapon_damage = weapon_damage2
+            max_dam_mode = max_shots_mode
          current_row.append(weapon_damage)
 
          #Indirectfire check module
@@ -255,19 +260,19 @@ for item in weapon_file_list:
             try:
                weapon_flat_jam = (data['FlatJammingChance'] + data['Modes'][max_dam_mode]['FlatJammingChance'] * 100)  
                print('Flat jamming chance ' + str(weapon_flat_jam))
-               current_row.append(weapon_flat_jam)
             except (KeyError, IndexError) as e:
                weapon_flat_jam = (data['FlatJammingChance'] * 100)
                print('No modes, reverting to base jam chance ' + str(weapon_flat_jam) + '%')
-               current_row.append(weapon_flat_jam)
          except KeyError:
             try:
                weapon_flat_jam = (data['Modes'][max_dam_mode]['FlatJammingChance'] * 100)
                print('No base flat jamming chance key, using modes ' + str(weapon_flat_jam) + '%')
-               current_row.append(weapon_flat_jam)
             except (KeyError, IndexError) as e:
                print('No flat jamming chance on this weapon.')
-               current_row.append(0)
+               weapon_flat_jam = 0
+         if weapon_flat_jam > 100:
+            weapon_flat_jam = 100
+         current_row.append(weapon_flat_jam)
 
          #weapon can misfire in max damage mode?
          try:
@@ -365,10 +370,18 @@ for item in weapon_file_list:
             weapon_range_max = data['MaxRange']
             current_row.append(weapon_range_max)
          except KeyError:
-            traceback.print_exc()
-         
+            traceback.print_exc()         
          print('Min ' + str(weapon_range_min)  + ' Short ' + str(weapon_range_short) + ' Medium ' + str(weapon_range_medium) + ' Long ' + str(weapon_range_long) + ' Max ' + str(weapon_range_max))
 
+         #Damage variance field module
+         try:
+            weapon_distance_variance = data['DistantVariance'] * 100
+         except KeyError:
+            print('No Distance Variance on weapon')
+            weapon_distance_variance = 0
+         current_row.append(weapon_distance_variance)
+
+         #damage variance module
          range_list = [weapon_range_min, weapon_range_short, weapon_range_medium, weapon_range_long, weapon_range_max]
          range_falloff_ratio_list = [0,0,0,0,0] #this is not being populated
          range_falloff_total_damage = [0,0,0,0,0]
@@ -412,7 +425,7 @@ for item in weapon_file_list:
                                  
                   elif data['DistantVarianceReversed'] == True:
                               #reversed tree
-                     print('Im not done yet!')
+                     print('Reversed Distance Variance')
                      try:
                         if data['DamageFalloffStartDistance'] > 1/1000:
                            falloff_start = data['DamageFalloffStartDistance']
@@ -421,8 +434,7 @@ for item in weapon_file_list:
                            falloff_start = weapon_range_min
                      except KeyError:
                         print('No falloff start distance key, using minimum value')
-                        falloff_start = weapon_range_min
-                     
+                        falloff_start = weapon_range_min                     
                      try:
                         if data['DamageFalloffEndDistance'] < falloff_start:
                            falloff_end = weapon_range_medium
@@ -430,8 +442,8 @@ for item in weapon_file_list:
                            falloff_end = data['DamageFalloffEndDistance']
                         print('Falloff start ', falloff_start,'Falloff end ', falloff_end)
                      except KeyError:
-                        print('No falloff end distance, using medium value')
-                        falloff_end = weapon_range_medium
+                        print('No falloff end distance, using max value')
+                        falloff_end = weapon_range_max
                      ##GET RATIO
                      j = 0
                      for i in range_list:
@@ -458,7 +470,7 @@ for item in weapon_file_list:
          #l.insert(newindex, l.pop(oldindex))
          current_row.insert(7,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
 
-         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
+         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
          print(df2)
          df = df.append(df2)
       except UnicodeDecodeError:
