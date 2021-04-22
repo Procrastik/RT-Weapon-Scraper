@@ -122,3 +122,42 @@
         CustomAmmoCategoriesLog.Log.M.TWL(0, "defId: " + ((MechComponent) weapon).get_defId() + "\n" + string.Format("baseMultiplier: {0}\n", (object) num1) + string.Format("distance: {0}\n", (object) num3) + string.Format("start distance: {0}\n", (object) num4) + string.Format("end distance: {0}\n", (object) num5) + string.Format("distanceRatio: {0}\n", (object) num6) + string.Format("result: {0}\n", (object) num7));
       return num7;
     }
+	
+	Here you go, an edited version of the whole function in what should be equivalent code that's way more readable:
+public static float DistanceDamageMod(this Weapon weapon, Vector3 attackPos, ICombatant target, bool log = true)
+{
+  // LOCALS
+  float range_Target = Vector3.Distance(attackPos, target.get_TargetPosition());
+  float range_F_Start = weapon.DamageFalloffStartDistance();
+  float range_F_End = weapon.DamageFalloffEndDistance();
+  float smol = 1f / 1000f;
+    // DEFAULT: 100%
+  float falloff = 1f;
+  float output = 1f;
+
+  // INPUT PROTECTION
+  if (range_F_Start < smol) range_F_Start = weapon.get_MediumRange();
+  if (range_F_End < range_F_Start) range_F_End = weapon.get_MaxRange();
+
+  // GET FALLOFF %
+  if ( (range_F_End - range_F_Start) > smol)
+    falloff = ((range_Target - range_F_Start) / (range_F_End - range_F_Start));
+
+  // CHECK FOR TRIVIAL CASE
+  if (range_Target < range_F_Start)
+    output = (falloff > 1.0) ? weapon.DistantVariance() : 1f;
+  else //DO THE THING
+    output = (falloff > 1.0) ? falloff - weapon.RangedDmgFalloffType(falloff) * (falloff - 1f) 
+    : (1.0 - weapon.RangedDmgFalloffType(falloff) * (1.0 - (double) weapon.DistantVariance()));
+
+  if (log) //THEN TAKE NOTES
+    CustomAmmoCategoriesLog.Log.M.TWL(0, "defId: "
+      + ((MechComponent) weapon).get_defId() + "\n"
+      + string.Format("baseMultiplier: {0}\n", (object) weapon.DistantVariance())
+      + string.Format("distance: {0}\n", (object) range_Target)
+      + string.Format("start distance: {0}\n", (object) range_F_Start)
+      + string.Format("end distance {0}\n", (object) range_F_End)
+      + string.Format("distanceRatio: {0}\n", (object) falloff)
+      + string.Format("result: {0}\n", (object) output));
+  return output;
+}
