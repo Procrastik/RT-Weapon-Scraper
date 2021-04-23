@@ -1,26 +1,26 @@
 import json
 import traceback
 
-local_file = "E:\RT Analyzation\RT-Analyzation\Weapon_Rotary_Autocannon_2.json"
+local_file = "E:\Roguetech\RogueTech\RISCtech\Items\Weapon\Weapon_PALASMA_RISC.json"
 
 with open(local_file) as f:
     data = json.load(f)
 
+##weapon heat damage module
+max_dam_mode = 12
+try:
+    weapon_heat_damage = (data['HeatDamage'] + data['Modes'][max_dam_mode]['HeatDamagePerShot']) * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])
+    print('Heat dam ' + str(weapon_heat_damage))
+   
+except KeyError:
+    print('Either no HeatDamagePerShot in modes, no ShotsWhenFired in modes, or no modes, checking other possibilities in modes')
     try:
-        weapon_flat_jam = data['FlatJammingChance'] #FlatJammingChance is handled backwards to ShotsWhenFired. Most mode weapons don't have a base FlatJammingChance key and ONLY have them in the modes. Check for base FIRST then check for modes based on that.
-        try:
-            weapon_flat_jam = (data['FlatJammingChance'] + data['Modes'][-1]['FlatJammingChance'] * 100)  
-            print('Flat jamming chance ' + str(weapon_flat_jam))
-        except (KeyError, IndexError) as e:
-            weapon_flat_jam = (data['FlatJammingChance'] * 100)
-            print('No modes, reverting to base jam chance ' + str(weapon_flat_jam) + '%')
+        weapon_heat_damage = (data['HeatDamage'] + data['Modes'][max_dam_mode]['HeatDamagePerShot']) * data['ProjectilesPerShot'] * data['ShotsWhenFired']
+        print('Heat dam ' + str(weapon_heat_damage))           
     except KeyError:
+        print('Either no HeatDamagePerShot in modes or no modes, checking other possibilities')                
         try:
-            weapon_flat_jam = (data['Modes'][-1]['FlatJammingChance'] * 100)
-            print('No base flat jamming chance key, using modes ' + str(weapon_flat_jam) + '%')
-        except (KeyError, IndexError) as e:
-            print('No flat jamming chance on this weapon.')
-            weapon_flat_jam = 0
-    if weapon_flat_jam > 100:
-        weapon_flat_jam = 100
-    print(weapon_flat_jam)
+            weapon_heat_damage = data['HeatDamage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired']) #heat damage = heat damage per shot * projectilespershot
+            print('Heat dam' + str(weapon_heat_damage))
+        except KeyError:
+            print('No heat damage key on this weapon!?')

@@ -86,7 +86,7 @@ for item in weapon_file_list:
 
          #weapon damage module - pulls the highest damage from base + any available modes and sets value to weapon_damage variable
          try:
-            max_mode_dam = 0 #set mode index of mode highest dam weapon
+            max_mode_dam = 0 #set value of highest additional damage in modes
             max_dam_mode = 0  #set value of highest additional damage in modes
             weapon_damage = 0 #Damage modes loop max damage value
             for i in range(len(data['Modes'])): #for loop to iterate over the number of Modes found
@@ -178,7 +178,7 @@ for item in weapon_file_list:
             print('Missing Weapon Slots')
             current_row.append('N/A')
 
-         ##add logic to test which mode is has the highest refire! Output int Y
+         ##weapon refire module
          try:
             if weapon_damage > weapon_damage2:
                weapon_recoil = data['RefireModifier'] + data['Modes'][max_dam_mode]['RefireModifier']
@@ -206,9 +206,9 @@ for item in weapon_file_list:
             print('No damage variance key!?')
             current_row.append(0)
 
-         #output float Y
+         #Weapon stability damage module
          try:
-            weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][-1]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+            weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
             print('Stability dam ' + str(weapon_stability_damage))
             current_row.append(weapon_stability_damage)
          except (KeyError, IndexError) as e:   
@@ -220,30 +220,32 @@ for item in weapon_file_list:
                print('No Stability damage key on this weapon!?')
                current_row.append('N/A')
 
-         ##add logic here to test which mode has the highest heat damage! output int
+         ##weapon heat damage module
          try:
-            weapon_heat_damage = data['HeatDamage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #heat damage = heat damage per shot * projectilespershot * (shotswhenfiredbase + shotswhenfired in modes)
+            weapon_heat_damage = (data['HeatDamage'] + data['Modes'][max_dam_mode]['HeatDamagePerShot']) * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])
             print('Heat dam ' + str(weapon_heat_damage))
             current_row.append(weapon_heat_damage)
-         except (KeyError, IndexError) as e:   
+         except (KeyError, IndexError) as e:
+            print('Either no HeatDamagePerShot in modes, no ShotsWhenFired in modes, or no modes, checking other possibilities in modes')
             try:
-               weapon_heat_damage = data['HeatDamage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired']) #heat damage = heat damage per shot * projectilespershot
-               print('Heat dam' + str(weapon_heat_damage))
-               current_row.append(weapon_heat_damage)
-            except KeyError:
-               print('No heat damage key on this weapon!?')
-               current_row.append(0)
+               weapon_heat_damage = (data['HeatDamage'] + data['Modes'][max_dam_mode]['HeatDamagePerShot']) * data['ProjectilesPerShot'] * data['ShotsWhenFired']
+               print('Heat dam ' + str(weapon_heat_damage))
+               current_row.append(weapon_heat_damage)            
+            except (KeyError, IndexError) as e:
+               print('Either no HeatDamagePerShot in modes or no modes, checking other possibilities')                
+               try:
+                  weapon_heat_damage = data['HeatDamage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired']) #heat damage = heat damage per shot * projectilespershot
+                  print('Heat dam' + str(weapon_heat_damage))
+                  current_row.append(weapon_heat_damage)
+               except KeyError:
+                  print('No heat damage key on this weapon!?')
+                  current_row.append(0)
 
-         ##add logic here to test which mode has the highest firing heat! output int
+         ##weapon firing heat module
          try:
-            if weapon_damage > weapon_damage2:
-               weapon_firing_heat = data['HeatGenerated'] + data['Modes'][max_dam_mode]['HeatGenerated']
-               print('HeatGenerated1 ' + str(weapon_firing_heat))
-               current_row.append(weapon_firing_heat)
-            elif weapon_damage2 >= weapon_damage:
-               weapon_firing_heat = data['HeatGenerated'] + data['Modes'][max_shots_mode]['HeatGenerated']
-               print('HeatGenerated2 ' + str(weapon_firing_heat))
-               current_row.append(weapon_firing_heat)
+            weapon_firing_heat = data['HeatGenerated'] + data['Modes'][max_dam_mode]['HeatGenerated']
+            print('HeatGenerated1 ' + str(weapon_firing_heat))
+            current_row.append(weapon_firing_heat)
          except (KeyError, IndexError) as e:
             print('No modes, using base values')
             try:
@@ -254,7 +256,7 @@ for item in weapon_file_list:
                print('No weapon firing heat key on this weapon')
                current_row.append(0)
 
-         ##add logic here to test which mode has the highest jamming chance! output float
+         ##Weapon jamming chance module
          try:
             weapon_flat_jam = data['FlatJammingChance'] #FlatJammingChance is handled backwards to ShotsWhenFired. Most mode weapons don't have a base FlatJammingChance key and ONLY have them in the modes. Check for base FIRST then check for modes based on that.
             try:
@@ -274,7 +276,7 @@ for item in weapon_file_list:
             weapon_flat_jam = 100
          current_row.append(weapon_flat_jam)
 
-         #weapon can misfire in max damage mode?
+         #weapon can misfire module
          try:
             weapon_misfire = str(data['DamageOnJamming'])
             try:
@@ -299,6 +301,7 @@ for item in weapon_file_list:
                print('No Custom categories or BonusDescriptions')
          current_row.append(weapon_misfire)
 
+         #damage compare modules
          try:
             weapon_damage_per_heat = float("{:.2f}".format(float(weapon_damage)/(float(weapon_firing_heat))))    
             print(weapon_damage_per_heat)
@@ -323,7 +326,7 @@ for item in weapon_file_list:
             print('Divide by Zero!')
             current_row.append(0)
 
-         #Accuracy bonus, negative is better
+         #Accuracy bonus module, negative is better
          try:
             weapon_accuracy_mod = data['AccuracyModifier']
             print(weapon_accuracy_mod)
@@ -332,7 +335,7 @@ for item in weapon_file_list:
             weapon_accuracy_mod = 0
          current_row.append(weapon_accuracy_mod)
 
-         #Evasion ignore, positive is better
+         #Evasion ignore module, positive is better
          try:
             weapon_evasion_ignore = data['EvasivePipsIgnored']
             print(weapon_evasion_ignore)
@@ -341,7 +344,7 @@ for item in weapon_file_list:
             weapon_evasion_ignore = 0
          current_row.append(weapon_evasion_ignore)
 
-         #output int
+         #Weapon range module
          try:
             weapon_range_min = data['MinRange']
             current_row.append(weapon_range_min)
@@ -381,7 +384,7 @@ for item in weapon_file_list:
             weapon_distance_variance = 0
          current_row.append(weapon_distance_variance)
 
-         #damage variance module
+         #damage variance calculation module
          range_list = [weapon_range_min, weapon_range_short, weapon_range_medium, weapon_range_long, weapon_range_max]
          range_falloff_ratio_list = [0,0,0,0,0] #this is not being populated
          range_falloff_total_damage = [0,0,0,0,0]
@@ -422,9 +425,8 @@ for item in weapon_file_list:
                               current_row.append(float("{:.2f}".format(weapon_damage * (1.0 - range_falloff_ratio_list[j] * (1.0 - data['DistantVariance'])))))
                               print('Adding damage')
                            j += 1
-                                 
+                  #reversed tree               
                   elif data['DistantVarianceReversed'] == True:
-                              #reversed tree
                      print('Reversed Distance Variance')
                      try:
                         if data['DamageFalloffStartDistance'] > 1/1000:
