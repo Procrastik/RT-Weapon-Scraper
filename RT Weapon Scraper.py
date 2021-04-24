@@ -1,21 +1,18 @@
-##ToDo List
-
-
-
-
 #OPTIMIZATION
 #Change for loop iterator for each file to check for modes at the start of the loop and set a variable has_modes, can call this for each check to save time/cycles
+#set a logging variable to enable full logging or no logging
 
 import os
 import json
 import traceback
 import pandas
 import time
+import re
 time1 = time.time()#this is simply to test time efficiency
 
 #change location variable to point to root of install location you want to analize.
 location = 'E:\Roguetech\RogueTech'
-file_keyword_exclusion_list = ['Quirks', 'Melee', 'Special', 'Turret', 'Ambush','Infantry']
+file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry']
 weapon_file_list = []
 excepted_files = []
 possible_invalid_jsons = []
@@ -159,15 +156,22 @@ for item in weapon_file_list:
          current_row.append(indirect_fire)
         
          #Tonnage check module
-         try:
-            weapon_tonnage = data['Tonnage']
-            print('Tons ' + str(weapon_tonnage))
+         if hardpoint_type == 'Special':
+            weapon_tonnage = data['Custom']['HandHeld']['Tonnage']
             current_row.append(weapon_tonnage)
-            if weapon_tonnage > 50: #this filters deprecated weapons that are 100 to 6666 tons
-               continue
-         except:
-            print('Missing Tonnage')
-            current_row.append('N/A')
+         elif hardpoint_type == 'SpecialMelee':
+            weapon_tonnage = data['Custom']['HandHeld']['Tonnage']
+            current_row.append(weapon_tonnage)
+         else:
+            try:
+               weapon_tonnage = data['Tonnage']
+               print('Tons ' + str(weapon_tonnage))
+               current_row.append(weapon_tonnage)
+               if weapon_tonnage > 50: #this filters deprecated weapons that are 100 to 6666 tons
+                  continue
+            except:
+               print('Missing Tonnage')
+               current_row.append('N/A')
 
          #Weapon slot size module
          try:
@@ -208,17 +212,71 @@ for item in weapon_file_list:
 
          #Weapon stability damage module
          try:
-            weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
-            print('Stability dam ' + str(weapon_stability_damage))
-            current_row.append(weapon_stability_damage)
-         except (KeyError, IndexError) as e:   
+            if data['ImprovedBallistic'] == True:
+               print('ImprovedBallistic True')
+               try:
+                  weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                  print('Stability dam ' + str(weapon_stability_damage))
+                  current_row.append(weapon_stability_damage)
+               except (KeyError, IndexError, TypeError) as e:
+                  print('No modes or no other mode related key, trying another combo')
+                  try:
+                     weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                     print('Stability dam ' + str(weapon_stability_damage))
+                     current_row.append(weapon_stability_damage)
+                  except (KeyError, IndexError) as e:
+                     print('No modes, trying base values')
+                     try:
+                        weapon_stability_damage = data['Instability'] * data['ShotsWhenFired'] #stability damage = stability damage per shot * shotswhenfired
+                        print('Stability dam ' + str(weapon_stability_damage))
+                        current_row.append(weapon_stability_damage)
+                     except KeyError:
+                        print('No Stability damage key on this weapon!?')
+                        current_row.append(0)
+
+            elif data['ImprovedBallistic'] == False:
+               print('ImprovedBallistic False')
+               try:
+                  weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'] #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                  print('Stability dam ' + str(weapon_stability_damage))
+                  current_row.append(weapon_stability_damage)
+               except (KeyError, IndexError, TypeError) as e:
+                  print('No modes or no other mode related key, trying another combo')
+                  try:
+                     weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'] #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                     print('Stability dam ' + str(weapon_stability_damage))
+                     current_row.append(weapon_stability_damage)
+                  except (KeyError, IndexError) as e:
+                     print('No modes, trying base values')
+                     try:
+                        weapon_stability_damage = data['Instability'] * data['ShotsWhenFired'] * data['ProjectilesPerShot'] #stability damage = stability damage per shot * shotswhenfired
+                        print('Stability dam ' + str(weapon_stability_damage))
+                        current_row.append(weapon_stability_damage)
+                     except KeyError:
+                        print('No Stability damage key on this weapon!?')
+                        current_row.append(0)
+            
+         except KeyError: #if no ImprovedBallistic key found on weapon (Custom Bundle assumes true if not present)
+            print('No ImprovedBallistic key found on weapon, defaulting to true')
             try:
-               weapon_stability_damage = data['Instability'] * data['ShotsWhenFired'] #stability damage = stability damage per shot * shotswhenfired
+               weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
                print('Stability dam ' + str(weapon_stability_damage))
                current_row.append(weapon_stability_damage)
-            except KeyError:
-               print('No Stability damage key on this weapon!?')
-               current_row.append('N/A')
+            except (KeyError, IndexError, TypeError) as e:
+               print('No modes or no other mode related key, trying another combo')
+               try:
+                  weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                  print('Stability dam ' + str(weapon_stability_damage))
+                  current_row.append(weapon_stability_damage)
+               except (KeyError, IndexError) as e:
+                  print('No modes, trying base values')
+                  try:
+                     weapon_stability_damage = data['Instability'] * data['ShotsWhenFired'] #stability damage = stability damage per shot * shotswhenfired
+                     print('Stability dam ' + str(weapon_stability_damage))
+                     current_row.append(weapon_stability_damage)
+                  except KeyError:
+                     print('No Stability damage key on this weapon!?')
+                     current_row.append(0)
 
          ##weapon heat damage module
          try:
@@ -258,6 +316,7 @@ for item in weapon_file_list:
 
          ##Weapon jamming chance module
          try:
+            weapon_flat_jam = 0
             weapon_flat_jam = data['FlatJammingChance'] #FlatJammingChance is handled backwards to ShotsWhenFired. Most mode weapons don't have a base FlatJammingChance key and ONLY have them in the modes. Check for base FIRST then check for modes based on that.
             try:
                weapon_flat_jam = (data['FlatJammingChance'] + data['Modes'][max_dam_mode]['FlatJammingChance'] * 100)  
@@ -270,28 +329,40 @@ for item in weapon_file_list:
                weapon_flat_jam = (data['Modes'][max_dam_mode]['FlatJammingChance'] * 100)
                print('No base flat jamming chance key, using modes ' + str(weapon_flat_jam) + '%')
             except (KeyError, IndexError) as e:
-               print('No flat jamming chance on this weapon.')
-               weapon_flat_jam = 0
+               try:
+                  pattern = '^wr-jam_chance_multiplier-[0-9]+'
+                  for i in data['ComponentTags']['items']:
+                     try:
+                        multiplier = int(re.match(pattern, i).group()[-1])
+                        weapon_flat_jam = weapon_recoil * multiplier
+                     except AttributeError:
+                        continue
+               except (KeyError, IndexError, TypeError) as e:
+                  traceback.print_exc()
+                  print('No flat jamming chance on this weapon.')
+                  weapon_flat_jam = 0
          if weapon_flat_jam > 100:
             weapon_flat_jam = 100
          current_row.append(weapon_flat_jam)
 
          #weapon can misfire module
          try:
+            weapon_misfire = 'False'
             weapon_misfire = str(data['DamageOnJamming'])
             try:
                weapon_misfire = str(data['Modes'][max_dam_mode]['DamageOnJamming'])
             except KeyError:
-               print('Weapon has no modes, using base')
+               print('Weapon has no modes, or no base, checking for modes')
          except KeyError:
             try:
-               if 'wr-damage_when_jam' in data['ComponentTags']['items']:
-                  weapon_misfire = 'True'
-               else:
-                  weapon_misfire = 'False'
-            except KeyError:
-               print('No jamming on this weapon')
-               weapon_misfire = 'False'
+               weapon_misfire = str(data['Modes'][max_dam_mode]['DamageOnJamming'])
+            except (KeyError, IndexError) as e:
+               print('Weapon has no modes, checking ComponentTags for wr tags')
+               try:
+                  if 'wr-damage_when_jam' in data['ComponentTags']['items']:
+                     weapon_misfire = 'True'
+               except KeyError:
+                  print('No jamming on this weapon')
          if weapon_misfire == 'False':
             try:
                for i in data['Custom']['BonusDescriptions']['Bonuses']:
@@ -349,31 +420,31 @@ for item in weapon_file_list:
             weapon_range_min = data['MinRange']
             current_row.append(weapon_range_min)
          except KeyError:
-            traceback.print_exc()
+            print('No minimum range on this weapon')
          
          try:
             weapon_range_short = data['RangeSplit'][0]
             current_row.append(weapon_range_short)
          except KeyError:
-            traceback.print_exc()
+            print('No short range on this weapon')
          
          try:
             weapon_range_medium = data['RangeSplit'][1]
             current_row.append(weapon_range_medium)
          except KeyError:
-            traceback.print_exc()
+            print('No medium range on this weapon')
 
          try:
             weapon_range_long = data['RangeSplit'][2]
             current_row.append(weapon_range_long)
          except KeyError:
-            traceback.print_exc()
+            print('No long range on this weapon')
 
          try:
             weapon_range_max = data['MaxRange']
             current_row.append(weapon_range_max)
          except KeyError:
-            traceback.print_exc()         
+            print('No max range on this weapon')         
          print('Min ' + str(weapon_range_min)  + ' Short ' + str(weapon_range_short) + ' Medium ' + str(weapon_range_medium) + ' Long ' + str(weapon_range_long) + ' Max ' + str(weapon_range_max))
 
          #Damage variance field module
@@ -493,25 +564,3 @@ with open("possible invalid JSON.txt", "w") as output:
 ##
 df.to_excel('RT Weaponlist.xlsx',sheet_name='Weapons')
 print('Parsed in', time.time() - time1, 'seconds')
-
-#use this to write to json without unicode errors? future use?
-#with open('s1Results/map.json', 'wb') as f:
- #   jdata = json.dumps(r.json(), indent=4, ensure_ascii=False)
-  #  f.write(jdata.encode())
-
-
-
-#OLD Damage module
-         #try:
-            #weapon_damage = str(data['Damage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][-1]['ShotsWhenFired'])) #damage = damage per shot * projectilespershot * (shotswhenfiredbase + shotswhenfired in modes)
-            #print('Dam ' + weapon_damage)
-            #current_row.append(weapon_damage)
-        # except (KeyError, IndexError) as e:
-            #try:
-               #weapon_damage = str(data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired'])) #damage = damage per shot * projectilespershot
-               #print('No damage in modes, defaulting to base', 'Dam ' + weapon_damage)
-               #current_row.append(weapon_damage)
-            #except KeyError:
-               #print('No damage on this weapon!?')
-               #current_row.append('N/A')
-         ##

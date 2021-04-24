@@ -161,3 +161,25 @@ public static float DistanceDamageMod(this Weapon weapon, Vector3 attackPos, ICo
       + string.Format("result: {0}\n", (object) output));
   return output;
 }
+
+
+=TAC Example=
+Mech with 100 armor from 200 and full structure. 
+Min crit chance 0.1. 
+Weapon has APArmorShardsMod = 0.5 
+APMaxArmorThickness = 150
+APCritChance = 0.5
+
+Shard Modifier = 1 + (1 - 100/200) = 1.5 
+Thickness Modifier = 1 - 100/150 = 0.33333(3)
+
+Overall chance  = 0.1 (Base minimum) * 1.5 (Shards Modifier) * 0.33333 (Thickness Modifier) * 0.5 (AP chance) = 0.025
+
+As armor becomes lower, both modifiers for shard and thickness will rise.
+
+
+
+#use this to write to json without unicode errors? future use?
+#with open('s1Results/map.json', 'wb') as f:
+ #   jdata = json.dumps(r.json(), indent=4, ensure_ascii=False)
+  #  f.write(jdata.encode())
