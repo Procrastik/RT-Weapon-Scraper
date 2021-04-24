@@ -16,7 +16,7 @@ file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry'
 weapon_file_list = []
 excepted_files = []
 possible_invalid_jsons = []
-df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
+df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Direct Damage', 'AOE Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list weapon_file_list
@@ -200,6 +200,21 @@ for item in weapon_file_list:
             except KeyError:
                print('No Refire Modifier on this weapon')
                current_row.append(0)
+
+         #Weapon AOE damage module
+         try:
+            if data['AOECapable'] == True:
+               print('Weapon has base AOE capability')
+               weapon_damage_AOE = data['AOEDamage']
+               current_row.append(weapon_damage_AOE)
+            else:
+               weapon_damage_AOE = 0
+               current_row.append(0)
+         except KeyError:
+            print('Weapon does not have base AOE capability; AOE could be through through modes or ammo though')
+            weapon_damage_AOE = 0
+            current_row.append(0)
+
          
          #Damage variance module
          try:
@@ -374,7 +389,7 @@ for item in weapon_file_list:
 
          #damage compare modules
          try:
-            weapon_damage_per_heat = float("{:.2f}".format(float(weapon_damage)/(float(weapon_firing_heat))))    
+            weapon_damage_per_heat = float("{:.2f}".format(float(weapon_damage + weapon_damage_AOE)/(float(weapon_firing_heat))))    
             print(weapon_damage_per_heat)
             current_row.append(weapon_damage_per_heat)
          except ZeroDivisionError:
@@ -382,7 +397,7 @@ for item in weapon_file_list:
             current_row.append(0)
 
          try:
-            weapon_damage_per_slot = float("{:.2f}".format(float(weapon_damage)/(float(weapon_slots))))
+            weapon_damage_per_slot = float("{:.2f}".format(float(weapon_damage + weapon_damage_AOE)/(float(weapon_slots))))
             print(weapon_damage_per_slot)
             current_row.append(weapon_damage_per_slot)
          except ZeroDivisionError:
@@ -390,7 +405,7 @@ for item in weapon_file_list:
             current_row.append(0)
 
          try:
-            weapon_damage_per_ton = float("{:.2f}".format(float(weapon_damage)/(float(weapon_tonnage))))
+            weapon_damage_per_ton = float("{:.2f}".format(float(weapon_damage + weapon_damage_AOE)/(float(weapon_tonnage))))
             print(weapon_damage_per_ton)
             current_row.append(weapon_damage_per_ton)
          except ZeroDivisionError:
@@ -543,7 +558,7 @@ for item in weapon_file_list:
          #l.insert(newindex, l.pop(oldindex))
          current_row.insert(7,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
 
-         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
+         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Direct Damage', 'AOE Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
          print(df2)
          df = df.append(df2)
       except UnicodeDecodeError:
