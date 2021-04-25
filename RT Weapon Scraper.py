@@ -16,7 +16,7 @@ file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry'
 weapon_file_list = []
 excepted_files = []
 possible_invalid_jsons = []
-df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
+df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Direct Damage', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness' , 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage'])
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list weapon_file_list
@@ -200,7 +200,27 @@ for item in weapon_file_list:
             except KeyError:
                print('No Refire Modifier on this weapon')
                current_row.append(0)
-         
+
+         #Weapon AOE damage and range module
+         try:
+            if data['AOECapable'] == True:
+               print('Weapon has base AOE capability')
+               weapon_damage_AOE = data['AOEDamage']
+               weapon_AOE_radius = data['AOERange']
+               current_row.append(weapon_damage_AOE)
+               current_row.append(weapon_AOE_radius)
+            else:
+               weapon_damage_AOE = 0
+               weapon_AOE_radius = 0 
+               current_row.append(0)
+               current_row.append(0)
+         except KeyError:
+            print('Weapon does not have base AOE capability; AOE could be through through modes or ammo though')
+            weapon_damage_AOE = 0
+            weapon_AOE_radius = 0
+            current_row.append(0)
+            current_row.append(0)
+
          #Damage variance module
          try:
             weapon_damage_variance = data['DamageVariance']
@@ -374,7 +394,7 @@ for item in weapon_file_list:
 
          #damage compare modules
          try:
-            weapon_damage_per_heat = float("{:.2f}".format(float(weapon_damage)/(float(weapon_firing_heat))))    
+            weapon_damage_per_heat = float("{:.2f}".format(float(weapon_damage + weapon_damage_AOE)/(float(weapon_firing_heat))))    
             print(weapon_damage_per_heat)
             current_row.append(weapon_damage_per_heat)
          except ZeroDivisionError:
@@ -382,7 +402,7 @@ for item in weapon_file_list:
             current_row.append(0)
 
          try:
-            weapon_damage_per_slot = float("{:.2f}".format(float(weapon_damage)/(float(weapon_slots))))
+            weapon_damage_per_slot = float("{:.2f}".format(float(weapon_damage + weapon_damage_AOE)/(float(weapon_slots))))
             print(weapon_damage_per_slot)
             current_row.append(weapon_damage_per_slot)
          except ZeroDivisionError:
@@ -390,12 +410,41 @@ for item in weapon_file_list:
             current_row.append(0)
 
          try:
-            weapon_damage_per_ton = float("{:.2f}".format(float(weapon_damage)/(float(weapon_tonnage))))
+            weapon_damage_per_ton = float("{:.2f}".format(float(weapon_damage + weapon_damage_AOE)/(float(weapon_tonnage))))
             print(weapon_damage_per_ton)
             current_row.append(weapon_damage_per_ton)
          except ZeroDivisionError:
             print('Divide by Zero!')
             current_row.append(0)
+
+         #TAC module
+         #to get a comparable baseline for all weapons we will compare (1 + (1 - half APMaxArmorThickness/APMaxArmorThickness) * (weapon APArmorShardsMod)) Add column for TAC and TAC max armor, TAC chance will be based on 50% of max AP armor for every weapon.
+         #APShardsMod = (1 + (1 - half APMaxArmorThickness/APMaxArmorThickness) * (weapon APArmorShardsMod))
+         #APThicknessMod = (1.0 - half APMaxArmorThickness/weapon APMaxArmorThickness) This will always be 0.5!
+         #weapon ap crit mod = weapon.APCriticalChanceMultiplier (if weapon.APCriticalChanceMultiplier = 0, weapon ap crit mod set to 1.0)
+         #final TAC chance = basic crit chance (0.1) * APShardsMod * APThicknessMod * weapon ap crit mod
+         try:
+            weapon_AP_crit_chance_multiplier = data['APCriticalChanceMultiplier']
+            weapon_max_AP_thickness = data['APMaxArmorThickness']
+            AP_shards_mod = (1 + (1 - 0.5)) * (data['APArmorShardsMod'])#hard coded to equal armor value of half of APMaxArmorThickness
+            AP_thickness_mod = 0.5 #hard coded value to represent percentage of APMaxArmorThickness remaining on target, this checks at 50%
+            weapon_TAC = float("{:0.6f}".format(0.1 * AP_shards_mod * AP_thickness_mod * weapon_AP_crit_chance_multiplier))
+            current_row.append(weapon_TAC)
+            current_row.append(weapon_max_AP_thickness)
+         except KeyError:
+            print('TAC KeyError, checking using default APCriticalChanceMultiplier')
+            try:
+               weapon_AP_crit_chance_multiplier = 1.0
+               weapon_max_AP_thickness = data['APMaxArmorThickness']
+               AP_shards_mod = (1 + (1 - 0.5)) * (data['APArmorShardsMod'])#hard coded to equal armor value of half of APMaxArmorThickness
+               AP_thickness_mod = 0.5 #hard coded value to represent percentage of APMaxArmorThickness remaining on target, this checks at 50%
+               weapon_TAC = float("{:0.6f}".format(0.1 * AP_shards_mod * AP_thickness_mod * weapon_AP_crit_chance_multiplier))
+               current_row.append(weapon_TAC)
+               current_row.append(weapon_max_AP_thickness)
+            except KeyError:
+               print('No TAC on this weapon')
+               current_row.append(0)
+               current_row.append(0)
 
          #Accuracy bonus module, negative is better
          try:
@@ -457,9 +506,8 @@ for item in weapon_file_list:
 
          #damage variance calculation module
          range_list = [weapon_range_min, weapon_range_short, weapon_range_medium, weapon_range_long, weapon_range_max]
-         range_falloff_ratio_list = [0,0,0,0,0] #this is not being populated
+         range_falloff_ratio_list = [0,0,0,0,0]
          range_falloff_total_damage = [0,0,0,0,0]
-
          try: 
             if data['isDamageVariation']: #verify weapon uses damage variance
                try:
@@ -543,7 +591,7 @@ for item in weapon_file_list:
          #l.insert(newindex, l.pop(oldindex))
          current_row.insert(7,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
 
-         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Damage', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
+         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Direct Damage', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness' , 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long range Damage','Max Range Damage']))
          print(df2)
          df = df.append(df2)
       except UnicodeDecodeError:

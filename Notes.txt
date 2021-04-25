@@ -177,6 +177,22 @@ Overall chance  = 0.1 (Base minimum) * 1.5 (Shards Modifier) * 0.33333 (Thicknes
 
 As armor becomes lower, both modifiers for shard and thickness will rise.
 
+"APMinCritChance": 0.1, - Minimal crit chance on AP processing.
+                          Basics: 
+                            advanced crit calculations:
+                              normal crit: crit chance = Max(Constants.ResolutionConstants.MinCritChance, (1 - <current structure>/<max structure>))
+                              so minimal value is Constants.ResolutionConstants.MinCritChance maximum 1 (if structure near zero). If random roll less than this value crit success if grater - no crit
+                              AP crit:
+                                 basic crit chance = Max(APMinCritChance, (1 - <current structure>/<max structure>))
+                                 armor shards mod = 1 + (1 - <current armor>/<max armor>)*weapon.APArmorShardsMod. 
+                                 armor thickness mod = (1f - armor / weapon.APMaxArmorThickness) if weapon.APMaxArmorThickness = 0 armor thickness mod is 1.0. 
+                                 if armor greater weapon.APMaxArmorThickness and weapon.APMaxArmorThickness grater than zero armor thickness mod = 0 (mean no AP crit)
+                                 weapon ap crit mod = weapon.APCriticalChanceMultiplier (if weapon.APCriticalChanceMultiplier = 0, weapon ap crit mod set to 1.0)
+                                 crit chance =  basic crit chance * armor shards mod * armor thickness mod * weapon ap crit mod
+                                 Main idea: weapon can have two mechanics of armor piece - solid core and cumulative jet
+                                    first one cause shards from previously damaged armor hit components increasing crit chance
+                                    second one have limited cumulative jet length and can't penetrate armor if too thick 
+
 
 
 #use this to write to json without unicode errors? future use?
