@@ -195,6 +195,20 @@ As armor becomes lower, both modifiers for shard and thickness will rise.
 
 
 
+
+Standard crits
+
+    float a = AdvancedCriticalProcessor.GetBaseCritChance(unit, critInfo);
+    float num = Mathf.Max(a, unit.Combat.Constants.ResolutionConstants.MinCritChance);
+    float critMultiplier = unit.Combat.CritChance.GetCritMultiplier(unit, weapon, true);
+    Log.C.WL(1, string.Format("[GetCritChance] base = {0}, multiplier = {1}!", num, critMultiplier), false);
+    critInfo.critChance = num * critMultiplier;
+    result2 = num * critMultiplier;
+	
+	In english (base crit from RTCore/GameConstants.json of 0.5 overwritten by AIM to 0.56)
+	0.56 * weapon crit chance * gear crit chance * ammo crit chance * target crit bonuses/penalties
+
+
 #use this to write to json without unicode errors? future use?
 #with open('s1Results/map.json', 'wb') as f:
  #   jdata = json.dumps(r.json(), indent=4, ensure_ascii=False)
