@@ -10,13 +10,13 @@ import time
 import re
 time1 = time.time()#this is simply to test time efficiency
 
-#change location variable to point to root of install location you want to analize.
+#change location variable to point to root of install location you want to analyze.
 location = 'E:\Roguetech\RogueTech'
 file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry']
 weapon_file_list = []
 excepted_files = []
 possible_invalid_jsons = []
-df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Direct Damage', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage'])
+df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage'])
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list weapon_file_list
@@ -200,6 +200,28 @@ for item in weapon_file_list:
             except KeyError:
                print('No Refire Modifier on this weapon')
                current_row.append(0)
+
+         #weapon base mode module
+         try:
+            weapon_base_damage = 0
+            for i in range(len(data['Modes'])): #for loop to iterate over the number of Modes found
+               print('Base mode check', i)
+               try:
+                  if data['Modes'][i]['isBaseMode']:
+                     weapon_base_damage = (data['Damage'] + data['Modes'][i]['DamagePerShot']) * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][i]['ShotsWhenFired'])
+                     #would like to use break here but it doesn't exit the for loop??
+               except KeyError: #if no DamagePerShot in mode found
+                  print('No DamagePerShot in modes, checking for extra shots in mode')
+                  try:
+                     weapon_base_damage = data['Damage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][i]['ShotsWhenFired'])
+                  except KeyError: #if no ShotsWhenFired in mode found
+                     print('Weapon has no extra shots in modes, using base values')
+                     weapon_base_damage = data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired'])
+         except KeyError: #This will catch errors when a weapon has no modes.
+            print('No modes, reverting to base values')
+            weapon_base_damage = data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired']) #damage = damage per shot * projectilespershot
+         print("Base weapon damage ", weapon_base_damage)
+         current_row.append(weapon_base_damage)
 
          #Weapon AOE damage and range module
          try:
@@ -602,9 +624,9 @@ for item in weapon_file_list:
 
 
          #l.insert(newindex, l.pop(oldindex))
-         current_row.insert(7,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
+         current_row.insert(8,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
 
-         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Max Direct Damage', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']))
+         df2 = pandas.DataFrame([current_row], columns=(['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']))
          print(df2)
          df = df.append(df2)
       except UnicodeDecodeError:
@@ -623,5 +645,5 @@ with open("possible invalid JSON.txt", "w") as output:
    for item in possible_invalid_jsons:
        output.write(str(item) + '\n')
 ##
-df.to_excel('RT Weaponlist.xlsx',sheet_name='Weapons')
+df.to_excel('RT Weaponlist.xlsx',sheet_name='Weapons',index=False)
 print('Parsed in', time.time() - time1, 'seconds')
