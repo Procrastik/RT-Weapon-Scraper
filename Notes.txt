@@ -207,6 +207,15 @@ Standard crits
 	
 	In english (base crit from RTCore/GameConstants.json of 0.5 overwritten by AIM to 0.56)
 	0.56 * weapon crit chance * gear crit chance * ammo crit chance * target crit bonuses/penalties
+	
+
+ "HitGenerator" : "Streak", Set to hit generator. Supported values ("Individual"/"Cluster"/"Streak"). 
+                                  Streak hit generator is sort of cluster, 
+								  if first projectile hit, rest hit too (location distribution as cluster hit generator),
+								  if first projectile misses, rest misses too
+								  if not set weapon hit generator will be used.
+								  if not set hit generator will be choosed by weapon type.
+								  if weapon define has tag "wr-clustered_shots", "Cluster" hit generator will be forced. 
 
 
 #use this to write to json without unicode errors? future use?

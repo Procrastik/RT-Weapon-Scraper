@@ -2,38 +2,28 @@ import json
 import traceback
 import re
 
-local_file = "E:\Roguetech\RogueTech\PirateTech\Items\Weapons\Weapon_Autocannon_AC20_JuryRigged.json"
+local_file = "E:\RT Analyzation\RT-Analyzation\Weapon_Rotary_Autocannon_2.json"
 
 with open(local_file) as f:
     data = json.load(f)
-weapon_recoil = 6
- ##Weapon jamming chance module
+
+#weapon base mode module
 try:
-    weapon_flat_jam = data['FlatJammingChance'] #FlatJammingChance is handled backwards to ShotsWhenFired. Most mode weapons don't have a base FlatJammingChance key and ONLY have them in the modes. Check for base FIRST then check for modes based on that.
-    try:
-        weapon_flat_jam = (data['FlatJammingChance'] + data['Modes'][-1]['FlatJammingChance'] * 100)  
-        print('Flat jamming chance ' + str(weapon_flat_jam))
-    except (KeyError, IndexError) as e:
-        weapon_flat_jam = (data['FlatJammingChance'] * 100)
-        print('No modes, reverting to base jam chance ' + str(weapon_flat_jam) + '%')
-except KeyError:
-    try:
-        weapon_flat_jam = (data['Modes'][-1]['FlatJammingChance'] * 100)
-        print('No base flat jamming chance key, using modes ' + str(weapon_flat_jam) + '%')
-    except (KeyError, IndexError) as e:
+    weapon_base_damage = 0
+    for i in range(len(data['Modes'])): #for loop to iterate over the number of Modes found
+        print('Base mode check', i)
         try:
-            pattern = '^wr-jam_chance_multiplier-[0-9]+'
-            for i in data['ComponentTags']['items']:
-                print(i)
-                try:
-                    multiplier = int(re.match(pattern, i).group()[-1])
-                    weapon_flat_jam = weapon_recoil * multiplier
-                except AttributeError:
-                    continue
-        except (KeyError, IndexError, TypeError) as e:
-            traceback.print_exc()
-            print('No flat jamming chance on this weapon.')
-            weapon_flat_jam = 0
-if weapon_flat_jam > 100:
-    weapon_flat_jam = 100
-print(weapon_flat_jam)
+            if data['Modes'][i]['isBaseMode']:
+                weapon_base_damage = (data['Damage'] + data['Modes'][i]['DamagePerShot']) * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][i]['ShotsWhenFired'])
+                #would like to use break here but it doesn't exit the for loop??
+        except KeyError: #if no DamagePerShot in mode found
+            print('No DamagePerShot in modes, checking for extra shots in mode')
+            try:
+                weapon_base_damage = data['Damage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][i]['ShotsWhenFired'])
+            except KeyError: #if no ShotsWhenFired in mode found
+                print('Weapon has no extra shots in modes, using base values')
+                weapon_base_damage = data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired'])
+except KeyError: #This will catch errors when a weapon has no modes.
+    print('No modes, reverting to base values')
+    weapon_base_damage = data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired']) #damage = damage per shot * projectilespershot
+print("Base weapon damage ", weapon_base_damage)
