@@ -265,7 +265,7 @@ for item in weapon_file_list:
 
          #Weapon stability damage module
          try:
-            if data['ImprovedBallistic'] == True:
+            if data['ImprovedBallistic'] == True: #instability is divided among all projectiles per shot
                print('ImprovedBallistic True')
                try:
                   weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['InstabilityMultiplier'] * data['Modes']['InstabilityMultiplier'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
@@ -299,27 +299,39 @@ for item in weapon_file_list:
                               print('No Stability damage key on this weapon!?')
                               current_row.append(0)
 
-            elif data['ImprovedBallistic'] == False:
+            elif data['ImprovedBallistic'] == False: #Instability is not divided up across projectiles per shot and is applied fully per projectile.
                print('ImprovedBallistic False')
                try:
-                  weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'] #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                  weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['InstabilityMultiplier'] * data['Modes']['InstabilityMultiplier'] * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
                   print('Stability dam ' + str(weapon_stability_damage))
                   current_row.append(weapon_stability_damage)
                except (KeyError, IndexError, TypeError) as e:
-                  print('No modes or no other mode related key, trying another combo')
+                  print('No modes or no other mode related key, trying another combo (1st try)')
                   try:
-                     weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'] #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                     weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['Modes']['InstabilityMultiplier'] * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
                      print('Stability dam ' + str(weapon_stability_damage))
                      current_row.append(weapon_stability_damage)
-                  except (KeyError, IndexError) as e:
-                     print('No modes, trying base values')
+                  except KeyError:
+                     print('No modes or no other mode related key, trying another combo (2nd try)')
                      try:
-                        weapon_stability_damage = data['Instability'] * data['ShotsWhenFired'] * data['ProjectilesPerShot'] #stability damage = stability damage per shot * shotswhenfired
+                        weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
                         print('Stability dam ' + str(weapon_stability_damage))
                         current_row.append(weapon_stability_damage)
-                     except KeyError:
-                        print('No Stability damage key on this weapon!?')
-                        current_row.append(0)
+                     except (KeyError, IndexError, TypeError) as e:
+                        print('No modes or no other mode related key, trying another combo (3rd try)')
+                        try:
+                           weapon_stability_damage = data['Instability'] * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                           print('Stability dam ' + str(weapon_stability_damage))
+                           current_row.append(weapon_stability_damage)
+                        except (KeyError, IndexError) as e:
+                           print('No modes, trying base values')
+                           try:
+                              weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] * data['ProjectilesPerShot']) #stability damage = stability damage per shot * shotswhenfired
+                              print('Stability dam ' + str(weapon_stability_damage))
+                              current_row.append(weapon_stability_damage)
+                           except KeyError:
+                              print('No Stability damage key on this weapon!?')
+                              current_row.append(0)
             
          except KeyError: #if no ImprovedBallistic key found on weapon (Custom Bundle assumes true if not present)
             print('No ImprovedBallistic key found on weapon, defaulting to true')
