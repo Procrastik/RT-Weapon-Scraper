@@ -1,9 +1,7 @@
 import os
 import json
 import traceback
-import pandas
 import time
-import re
 time1 = time.time()#this is simply to test time efficiency
 
 #change location variable to point to root of install location you want to analyze.
@@ -12,10 +10,11 @@ file_keyword_exclusion_list = []
 ammo_file_list = []
 excepted_files = []
 possible_invalid_jsons = []
-ammotype_set = set()
 ammotype_dam_dict = {}
-ammotype_best_dict = {}
+ammotype_dam_best_dict = {}
 ammotype_heatdam_dict = {}
+ammotype_heatdam_best_dict = {}
+ammotype_doescluster_dict = {}
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list ammo_file_list
@@ -49,25 +48,74 @@ for item in ammo_file_list:
             data = json.load(f)
             try:
                if data['Category'] not in ammotype_dam_dict.keys():
+                  print('New category, adding')
                   try:
                      if data['DamageMultiplier'] > 1:
                         ammotype_dam_dict[data['Category']] = data['DamageMultiplier']
-                        ammotype_best_dict[data['Category']] = data['Description']['Name']
+                        ammotype_dam_best_dict[data['Category']] = data['Description']['Name']
+                        print('Dam ', ammotype_dam_dict[data['Category']])
                      else:
+                        print('No DamageMultiplier on ammo; Defaulting to 1.')
                         ammotype_dam_dict[data['Category']] = 1
-                        ammotype_best_dict[data['Category']] = data['Description']['Name']                    
-                        #need to store the ammo UIname here as well to put in weaponlist
+                        ammotype_dam_best_dict[data['Category']] = data['Description']['Name']
+                        print('Dam ', ammotype_dam_dict[data['Category']])
                   except KeyError:
                      print('No DamageMultiplier on ammo; Defaulting to 1.')
                      ammotype_dam_dict[data['Category']] = 1
-                     ammotype_best_dict[data['Category']] = data['Description']['Name']
+                     ammotype_dam_best_dict[data['Category']] = data['Description']['Name']
+                     print('Dam ', ammotype_dam_dict[data['Category']])
+
+                  try:
+                     if data['HeatDamagePerShot'] > 0:
+                        ammotype_heatdam_dict[data['Category']] = data['HeatDamagePerShot']
+                        ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                        print('Heatdam ', ammotype_heatdam_dict[data['Category']])
+                     else:
+                        print('No HeatDamagePerShot on ammo; Defaulting to 0.')
+                        ammotype_heatdam_dict[data['Category']] = 0
+                        ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                        print('Heatdam ', ammotype_heatdam_dict[data['Category']])
+                  except KeyError:
+                     print('No HeatDamagePerShot on ammo; Defaulting to 0.')
+                     ammotype_heatdam_dict[data['Category']] = 0
+                     ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                     print('Heatdam ', ammotype_heatdam_dict[data['Category']])
+
+                  try:
+                     if data['HitGenerator'] == 'Cluster':
+                        ammotype_doescluster_dict[data['Category']] = True
+                        print(ammotype_heatdam_dict[data['Category']], ' does cluster!')
+                     else:
+                        ammotype_doescluster_dict[data['Category']] = False
+                        print(ammotype_doescluster_dict[data['Category']], ' Ammo does not Cluster')
+                  except KeyError:
+                     print('No HitGenerator trait on ammo, defaulting to False')
+                     ammotype_doescluster_dict[data['Category']] = False
+                     print(ammotype_doescluster_dict[data['Category']], ' does not Cluster')
+                  
                elif data['Category'] in ammotype_dam_dict.keys():
+                  print('Existing category, comparing')
                   try:
                      if data['DamageMultiplier'] > ammotype_dam_dict[data['Category']]:
                         ammotype_dam_dict[data['Category']] = data['DamageMultiplier']
-                        ammotype_best_dict[data['Category']] = data['Description']['Name']
+                        ammotype_dam_best_dict[data['Category']] = data['Description']['Name']
+                        print('Dam ', ammotype_dam_dict[data['Category']])
                   except KeyError:
                      print('No DamageMultiplier on ammo; Skipping as key already has an entry of 1 or above')
+                  try:
+                     if data['HeatDamagePerShot'] > ammotype_heatdam_dict[data['Category']]:
+                        ammotype_heatdam_dict[data['Category']] = data['HeatDamagePerShot']
+                        ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                        print('Heatdam ', ammotype_heatdam_dict[data['Category']])
+                  except KeyError:
+                     print('No HeatDamagePerShot on ammo; Skipping as key already has an entry of 0 or above')
+                  try:
+                     if ammotype_doescluster_dict[data['Category']] == False:
+                        if data['HitGenerator'] == 'Cluster':
+                           ammotype_doescluster_dict[data['Category']] = True
+                           print(ammotype_heatdam_dict[data['Category']], ' does cluster!')
+                  except KeyError:
+                     print('No HitGenerator trait on ammo, skipping.')
             except KeyError:
                traceback.print_exc()
                print('No Category on ammo! Skipping.')
@@ -77,6 +125,6 @@ for item in ammo_file_list:
         except json.decoder.JSONDecodeError:
             possible_invalid_jsons.append(item)
             print('Possible invalid JSON!')
-print(ammo_file_list)
+print(ammotype_dam_best_dict, ammotype_heatdam_best_dict, ammotype_doescluster_dict)
 
     

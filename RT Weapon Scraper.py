@@ -12,8 +12,9 @@ time1 = time.time()#this is simply to test time efficiency
 
 #change location variable to point to root of install location you want to analyze.
 location = 'E:\Roguetech\RogueTech'
-file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry']
+file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry', 'deprecated']
 weapon_file_list = []
+filtered_files = []
 excepted_files = []
 possible_invalid_jsons = []
 df = pandas.DataFrame(columns=['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage'])
@@ -74,6 +75,14 @@ for item in weapon_file_list:
          
          #Weapon name module
          try:
+            if 'Deprecated' in data['Description']['UIName']:
+               print('Deprecated in name, skipping')
+               filtered_files.append(item)
+               continue
+            elif 'DEPRECATED' in data['Description']['UIName']:
+               print('Deprecated in name, skipping')
+               filtered_files.append(item)
+               continue
             weapon_name = str(data['Description']['UIName'])
             print(weapon_name)
             current_row.append(weapon_name)
@@ -168,6 +177,8 @@ for item in weapon_file_list:
                print('Tons ' + str(weapon_tonnage))
                current_row.append(weapon_tonnage)
                if weapon_tonnage > 50: #this filters deprecated weapons that are 100 to 6666 tons
+                  print('Filtered out deprecated weapon by tonnage')
+                  filtered_files.append(item)
                   continue
             except:
                print('Missing Tonnage')
@@ -257,24 +268,36 @@ for item in weapon_file_list:
             if data['ImprovedBallistic'] == True:
                print('ImprovedBallistic True')
                try:
-                  weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                  weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['InstabilityMultiplier'] * data['Modes']['InstabilityMultiplier'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
                   print('Stability dam ' + str(weapon_stability_damage))
                   current_row.append(weapon_stability_damage)
                except (KeyError, IndexError, TypeError) as e:
-                  print('No modes or no other mode related key, trying another combo')
+                  print('No modes or no other mode related key, trying another combo (1st try)')
                   try:
-                     weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                     weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['Modes']['InstabilityMultiplier'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
                      print('Stability dam ' + str(weapon_stability_damage))
                      current_row.append(weapon_stability_damage)
-                  except (KeyError, IndexError) as e:
-                     print('No modes, trying base values')
+                  except (KeyError, IndexError, TypeError) as e:
+                     print('No modes or no other mode related key, trying another combo (2nd try)')
                      try:
-                        weapon_stability_damage = data['Instability'] * data['ShotsWhenFired'] #stability damage = stability damage per shot * shotswhenfired
+                        weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
                         print('Stability dam ' + str(weapon_stability_damage))
                         current_row.append(weapon_stability_damage)
-                     except KeyError:
-                        print('No Stability damage key on this weapon!?')
-                        current_row.append(0)
+                     except (KeyError, IndexError, TypeError) as e:
+                        print('No modes or no other mode related key, trying another combo (3rd try)')
+                        try:
+                           weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) #stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                           print('Stability dam ' + str(weapon_stability_damage))
+                           current_row.append(weapon_stability_damage)
+                        except (KeyError, IndexError) as e:
+                           print('No modes, trying base values')
+                           try:
+                              weapon_stability_damage = data['Instability'] * data['ShotsWhenFired'] #stability damage = stability damage per shot * shotswhenfired
+                              print('Stability dam ' + str(weapon_stability_damage))
+                              current_row.append(weapon_stability_damage)
+                           except KeyError:
+                              print('No Stability damage key on this weapon!?')
+                              current_row.append(0)
 
             elif data['ImprovedBallistic'] == False:
                print('ImprovedBallistic False')
@@ -464,6 +487,16 @@ for item in weapon_file_list:
             AP_shards_mod = (1 + (1 - 0.5)) * (data['APArmorShardsMod'])#hard coded to equal armor value of half of APMaxArmorThickness
             AP_thickness_mod = 0.5 #hard coded value to represent percentage of APMaxArmorThickness remaining on target, this checks at 50%
             weapon_TAC = float("{:0.6f}".format(0.1 * AP_shards_mod * AP_thickness_mod * weapon_AP_crit_chance_multiplier))
+            print('90% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.9) * weapon_AP_crit_chance_multiplier)))
+            print('80% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.8) * weapon_AP_crit_chance_multiplier)))
+            print('70% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.7) * weapon_AP_crit_chance_multiplier)))
+            print('60% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.6) * weapon_AP_crit_chance_multiplier)))
+            print('50% ', weapon_TAC, ' = 0.1 * ', AP_shards_mod, ' * ', AP_thickness_mod, ' * ', weapon_AP_crit_chance_multiplier)
+            print('40% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.4) * weapon_AP_crit_chance_multiplier)))
+            print('30% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.3) * weapon_AP_crit_chance_multiplier)))
+            print('20% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.2) * weapon_AP_crit_chance_multiplier)))
+            print('10% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.1) * weapon_AP_crit_chance_multiplier)))
+            print('00% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.0) * weapon_AP_crit_chance_multiplier)))
             current_row.append(weapon_TAC)
             current_row.append(weapon_max_AP_thickness)
          except KeyError:
@@ -474,6 +507,16 @@ for item in weapon_file_list:
                AP_shards_mod = (1 + (1 - 0.5)) * (data['APArmorShardsMod'])#hard coded to equal armor value of half of APMaxArmorThickness
                AP_thickness_mod = 0.5 #hard coded value to represent percentage of APMaxArmorThickness remaining on target, this checks at 50%
                weapon_TAC = float("{:0.6f}".format(0.1 * AP_shards_mod * AP_thickness_mod * weapon_AP_crit_chance_multiplier))
+               print('90% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.9) * weapon_AP_crit_chance_multiplier)))
+               print('80% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.8) * weapon_AP_crit_chance_multiplier)))
+               print('70% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.7) * weapon_AP_crit_chance_multiplier)))
+               print('60% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.6) * weapon_AP_crit_chance_multiplier)))
+               print('50% ', weapon_TAC, ' = 0.1 * ', AP_shards_mod, ' * ', AP_thickness_mod, ' * ', weapon_AP_crit_chance_multiplier)
+               print('40% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.4) * weapon_AP_crit_chance_multiplier)))
+               print('30% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.3) * weapon_AP_crit_chance_multiplier)))
+               print('20% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.2) * weapon_AP_crit_chance_multiplier)))
+               print('10% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.1) * weapon_AP_crit_chance_multiplier)))
+               print('00% ', float("{:0.6f}".format(0.1 * AP_shards_mod * (1 - 0.0) * weapon_AP_crit_chance_multiplier)))
                current_row.append(weapon_TAC)
                current_row.append(weapon_max_AP_thickness)
             except KeyError:
@@ -637,6 +680,10 @@ for item in weapon_file_list:
          print('Possible invalid JSON!')
 
 #Used to write filenames of different types of excepted files to separate text files for analyzation later
+with open("filtered files.txt", "w") as output:
+   for item in filtered_files:
+       output.write(str(item) + '\n')
+
 with open("excepted files.txt", "w") as output:
    for item in excepted_files:
        output.write(str(item) + '\n')

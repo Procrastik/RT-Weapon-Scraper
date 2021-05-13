@@ -216,6 +216,11 @@ Standard crits
 								  if not set weapon hit generator will be used.
 								  if not set hit generator will be choosed by weapon type.
 								  if weapon define has tag "wr-clustered_shots", "Cluster" hit generator will be forced. 
+								  
+Instability formula one
+(baseDamage + extAmmunitionDef.Instability + weaponMode.Instability) * extAmmunitionDef.InstabilityMultiplier * weaponMode.InstabilityMultiplier;
+Instability formula two
+(weapon.get_weaponDef().get_Instability() + extAmmunitionDef.Instability + weaponMode.Instability) * extAmmunitionDef.InstabilityMultiplier * weaponMode.InstabilityMultiplier * baseDamage / weapon.get_weaponDef().get_Instability();
 
 
 #use this to write to json without unicode errors? future use?
