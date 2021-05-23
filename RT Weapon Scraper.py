@@ -11,17 +11,16 @@ import re
 time1 = time.time()#this is simply to test time efficiency
 
 #change location variable to point to root of install location you want to analyze.
-location = 'E:\Roguetech\RogueTech'
+location = 'D:\RogueTech Git\RogueTech'
 file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry', 'deprecated']
 weapon_file_list = []
 filtered_files = []
 excepted_files = []
 possible_invalid_jsons = []
-columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
+columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'Highest Damaging Ammo', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
 df = pandas.DataFrame(columns=columns_list)
 ##
 
-location = 'E:\Roguetech\RogueTech'
 ammo_file_list = []
 ammotype_dam_dict = {}
 ammotype_dam_best_dict = {}
@@ -56,6 +55,7 @@ for r, d, f in os.walk(location):
 ##
 
 #this iterates through the identified list of files meeting search criteria, prints the filename and loads them with the json module so you can search them and finally checks if there is any loading errors and adds them to lists to help identify invalid JSONs or bad characters.
+#Do not combine this with the weapon_file_list because it is twice as fast this way than combined
 for item in ammo_file_list:
    with open(item) as f:
         print(item)
@@ -124,7 +124,7 @@ for item in ammo_file_list:
                   try:
                      if data['HitGenerator'] == 'Cluster':
                         ammotype_doescluster_dict[data['Category']] = True
-                        print(ammotype_heatdam_dict[data['Category']], ' does cluster!')
+                        print(ammotype_doescluster_dict[data['Category']], ' does cluster!')
                      else:
                         ammotype_doescluster_dict[data['Category']] = False
                         print(ammotype_doescluster_dict[data['Category']], ' Ammo does not Cluster')
@@ -141,6 +141,8 @@ for item in ammo_file_list:
                         #ammotype_dam_multi_best_dict[data['Category']] = data['Description']['Name']
                         ammotype_dam_multi_best_dict[data['Category']] = f.name
                         print('Dam ', ammotype_dam_multi_dict[data['Category']])
+                     elif data['DamageMultiplier'] == ammotype_dam_multi_dict[data['Category']]:
+                        ammotype_dam_best_dict[data['Category']] = 'Multiple'
                   except KeyError:
                      print('No DamageMultiplier on ammo; Skipping as key already has an entry value higher than this')
                   
@@ -150,6 +152,8 @@ for item in ammo_file_list:
                         #ammotype_dam_multi_best_dict[data['Category']] = data['Description']['Name']
                         ammotype_dam_best_dict[data['Category']] = f.name
                         print('Dam ', ammotype_dam_dict[data['Category']])
+                     elif data['DamagePerShot'] == ammotype_dam_dict[data['Category']]:
+                        ammotype_dam_best_dict[data['Category']] = 'Multiple'
                   except KeyError:
                      print('No DamagePerShot on ammo; Skipping as key already has an entry value higher than this.')
 
@@ -159,6 +163,8 @@ for item in ammo_file_list:
                         #ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
                         ammotype_heatdam_best_dict[data['Category']] = f.name
                         print('Heatdam ', ammotype_heatdam_dict[data['Category']])
+                     elif data['DamagePerShot'] == ammotype_heatdam_dict[data['Category']]:
+                        ammotype_heatdam_best_dict[data['Category']] = 'Multiple'
                   except KeyError:
                      print('No HeatDamagePerShot on ammo; Skipping as key already has an entry of 0 or above')
                   try:
@@ -238,10 +244,6 @@ for item in weapon_file_list:
                print('Deprecated in name, skipping')
                filtered_files.append(item)
                continue
-            elif 'DEPRECATED' in data['Description']['UIName']:
-               print('Deprecated in name, skipping')
-               filtered_files.append(item)
-               continue
             weapon_name = str(data['Description']['UIName'])
             print(weapon_name)
             current_row.append(weapon_name)
@@ -257,14 +259,14 @@ for item in weapon_file_list:
             for i in range(len(data['Modes'])): #for loop to iterate over the number of Modes found
                print('Damage mode', i)
                try:
-                     if data['Modes'][i]['DamagePerShot'] > max_mode_dam:
-                        max_mode_dam = data['Modes'][i]['DamagePerShot']
-                        max_dam_mode = i
-                     try:
-                        if data['Modes'][i]['ShotsWhenFired']:#check for ShotsWhenFired in mode
-                           weapon_damage = (data['Damage'] + max_mode_dam) * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])
-                     except KeyError:
-                        weapon_damage = (data['Damage'] + max_mode_dam) * data['ProjectilesPerShot'] * data['ShotsWhenFired']
+                  if data['Modes'][i]['DamagePerShot'] > max_mode_dam:
+                     max_mode_dam = data['Modes'][i]['DamagePerShot']
+                     max_dam_mode = i
+                  try:
+                     if data['Modes'][i]['ShotsWhenFired']:#check for ShotsWhenFired in mode
+                        weapon_damage = (data['Damage'] + max_mode_dam) * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])
+                  except KeyError:
+                     weapon_damage = (data['Damage'] + max_mode_dam) * data['ProjectilesPerShot'] * data['ShotsWhenFired']
                except KeyError: #if no DamagePerShot in mode found
                      print('No DamagePerShot in modes, reverting to base values')
                      weapon_damage = data['Damage'] * data['ProjectilesPerShot'] * data['ShotsWhenFired']
@@ -279,15 +281,15 @@ for item in weapon_file_list:
             for i in range(len(data['Modes'])):
                print('Shots loop:', i)
                try:#if no damage in modes found then check modes for additional shots and calculate damage against base value
-                     if data['Modes'][i]['ShotsWhenFired'] > max_mode_shots:
-                        max_mode_shots = data['Modes'][i]['ShotsWhenFired']
-                        max_shots_mode = i
-                     try:
-                        weapon_damage2 = data['Damage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + max_mode_shots) #damage = damage per shot + max damage mode extra damage * projectilespershot * (shotswhenfiredbase + shotswhenfired in modes + damage in modes)
-                        print(max_mode_shots)
-                     except:
-                        print('can this be reached?')
-                        traceback.print_exc()
+                  if data['Modes'][i]['ShotsWhenFired'] > max_mode_shots:
+                     max_mode_shots = data['Modes'][i]['ShotsWhenFired']
+                     max_shots_mode = i
+                  try:
+                     weapon_damage2 = data['Damage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + max_mode_shots) #damage = damage per shot + max damage mode extra damage * projectilespershot * (shotswhenfiredbase + shotswhenfired in modes + damage in modes)
+                     print(max_mode_shots)
+                  except:
+                     print('can this be reached?')
+                     traceback.print_exc()
                except:
                   traceback.print_exc()
                   print('No additional ShotsWhenFired found in modes, reverting to base')   
@@ -392,6 +394,19 @@ for item in weapon_file_list:
             weapon_base_damage = data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired']) #damage = damage per shot * projectilespershot
          print("Base weapon damage ", weapon_base_damage)
          current_row.append(weapon_base_damage)
+
+         #Weapon most damaging ammotype module
+         try:
+            pattern = '\w*.json'
+            match_var = re.search(pattern,ammotype_dam_best_dict[data['AmmoCategory']])
+            current_row.append(match_var.group()[:-5])
+            print('Best ammo is ' + match_var.group()[:-5])
+         except (KeyError, TypeError) as e:
+            traceback.print_exc()
+            current_row.append('N/A')
+            print('Weapon has no ammo category')
+         except AttributeError:
+            current_row.append(ammotype_dam_best_dict[data['AmmoCategory']])         
 
          #Weapon AOE damage and range module
          try:
