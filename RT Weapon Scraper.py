@@ -17,7 +17,7 @@ weapon_file_list = []
 filtered_files = []
 excepted_files = []
 possible_invalid_jsons = []
-columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'Highest Damaging Ammo', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
+columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Clustering Capable (Weapon or with ammo)', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'Highest Damaging Ammo', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
 df = pandas.DataFrame(columns=columns_list)
 ##
 
@@ -324,7 +324,62 @@ for item in weapon_file_list:
                print('Missing Indirect Fire boolean')
                indirect_fire = 'False'
          current_row.append(indirect_fire)
-        
+
+         #Weapon cluster module
+         weapon_cluster = 'False'
+         try:
+            if data['HitGenerator'] == 'Cluster':
+               weapon_cluster = 'True'
+               print('HitGenerator cluster on weapon')
+            else:
+               try:
+                  if 'wr-clustered_shots' in data['ComponentTags']['items']:
+                     weapon_cluster = 'True'
+                     print('wr-clustered_shots on weapon')
+                  elif data['Type'] == 'LRM':
+                     print('WeaponType is LRM')
+                     try:
+                        if data['HitGenerator'] == 'Cluster':
+                           weapon_cluster = 'True'
+                     except KeyError:
+                        print('Weapon is LRM and has no other HitGenerators, it does cluster.')
+                        weapon_cluster = 'True'
+               except KeyError:
+                  print('No wr-clustered_shots or Weapon Type, skipping')
+         except KeyError:
+            print('No HitGenerator trait on base weapon, checking other options')
+            try:
+               if 'wr-clustered_shots' in data['ComponentTags']['items']:
+                  weapon_cluster = 'True'
+               elif data['Type'] == 'LRM':
+                  try:
+                     if data['HitGenerator'] == 'Cluster':
+                        weapon_cluster = 'True'
+                  except KeyError:
+                     print('Weapon is LRM and has no other HitGenerators, it does cluster.')
+                     weapon_cluster = 'True'
+            except KeyError:
+               print('No wr-clustered_shots or Weapon Type, skipping')
+         try:
+            if weapon_cluster == 'False': 
+               for i in range(len(data['Modes'])): #for loop to iterate over the number of Modes found
+                  print('Cluster check Mode ', i)
+                  try:
+                     if data['Modes'][i]['HitGenerator'] == 'Cluster':
+                        weapon_cluster = 'True in Mode'
+                        continue
+                  except KeyError:
+                     print('No clustering on this mode, trying next')
+         except KeyError:
+            print('No modes found on weapon for cluster check')
+         try:
+            if ammotype_dam_dict[data['AmmoCategory']] == True:
+               weapon_cluster = 'True in Ammo'
+         except KeyError:
+            print('No ammo clustering for this weapon')
+                            
+         current_row.append(weapon_cluster)
+
          #Tonnage check module
          if hardpoint_type == 'Special':
             weapon_tonnage = data['Custom']['HandHeld']['Tonnage']
