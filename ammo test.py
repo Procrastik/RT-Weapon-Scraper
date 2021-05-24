@@ -15,6 +15,8 @@ ammotype_dam_best_dict = {}
 ammotype_heatdam_dict = {}
 ammotype_heatdam_best_dict = {}
 ammotype_doescluster_dict = {}
+ammotype_dam_multi_dict = {}
+ammotype_dam_multi_best_dict = {}
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list ammo_file_list
@@ -47,38 +49,63 @@ for item in ammo_file_list:
         try: 
             data = json.load(f)
             try:
-               if data['Category'] not in ammotype_dam_dict.keys():
+               if data['Category'] not in ammotype_dam_multi_dict.keys():
                   print('New category, adding')
                   try:
                      if data['DamageMultiplier'] > 1:
-                        ammotype_dam_dict[data['Category']] = data['DamageMultiplier']
-                        ammotype_dam_best_dict[data['Category']] = data['Description']['Name']
-                        print('Dam ', ammotype_dam_dict[data['Category']])
+                        ammotype_dam_multi_dict[data['Category']] = data['DamageMultiplier']
+                        #ammotype_dam_multi_best_dict[data['Category']] = data['Description']['Name']
+                        ammotype_dam_multi_best_dict[data['Category']] = f.name
+                        print('Dam Multiplier', ammotype_dam_multi_dict[data['Category']])
                      else:
                         print('No DamageMultiplier on ammo; Defaulting to 1.')
-                        ammotype_dam_dict[data['Category']] = 1
-                        ammotype_dam_best_dict[data['Category']] = data['Description']['Name']
-                        print('Dam ', ammotype_dam_dict[data['Category']])
+                        ammotype_dam_multi_dict[data['Category']] = 1
+                        #ammotype_dam_multi_best_dict[data['Category']] = data['Description']['Name']
+                        ammotype_dam_multi_best_dict[data['Category']] = f.name
+                        print('Dam Multiplier', ammotype_dam_multi_dict[data['Category']])
                   except KeyError:
                      print('No DamageMultiplier on ammo; Defaulting to 1.')
-                     ammotype_dam_dict[data['Category']] = 1
-                     ammotype_dam_best_dict[data['Category']] = data['Description']['Name']
-                     print('Dam ', ammotype_dam_dict[data['Category']])
+                     ammotype_dam_multi_dict[data['Category']] = 1
+                     #ammotype_dam_multi_best_dict[data['Category']] = data['Description']['Name']
+                     ammotype_dam_multi_best_dict[data['Category']] = f.name
+                     print('Dam Multiplier ', ammotype_dam_multi_dict[data['Category']])
+
+                  try:
+                     if data['DamagePerShot'] > 1:
+                        ammotype_dam_dict[data['Category']] = data['DamagePerShot']
+                        #ammotype_dam_multi_best_dict[data['Category']] = data['Description']['Name']
+                        ammotype_dam_best_dict[data['Category']] = f.name
+                        print('Dampershot', ammotype_dam_dict[data['Category']])
+                     else:
+                        print('No DamagePerShot on ammo; Defaulting to 0.')
+                        ammotype_dam_dict[data['Category']] = 1
+                        #ammotype_dam_multi_best_dict[data['Category']] = data['Description']['Name']
+                        ammotype_dam_best_dict[data['Category']] = f.name
+                        print('Dampershot ', ammotype_dam_multi_dict[data['Category']])
+                  except KeyError:
+                     print('No DamagePerShot on ammo; Defaulting to 0.')
+                     ammotype_dam_dict[data['Category']] = 0
+                     #ammotype_dam_multi_best_dict[data['Category']] = data['Description']['Name']
+                     ammotype_dam_best_dict[data['Category']] = f.name
+                     print('Dampershot ', ammotype_dam_dict[data['Category']])
 
                   try:
                      if data['HeatDamagePerShot'] > 0:
                         ammotype_heatdam_dict[data['Category']] = data['HeatDamagePerShot']
-                        ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                        #ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                        ammotype_heatdam_best_dict[data['Category']] = f.name
                         print('Heatdam ', ammotype_heatdam_dict[data['Category']])
                      else:
                         print('No HeatDamagePerShot on ammo; Defaulting to 0.')
                         ammotype_heatdam_dict[data['Category']] = 0
-                        ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                        #ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                        ammotype_heatdam_best_dict[data['Category']] = f.name
                         print('Heatdam ', ammotype_heatdam_dict[data['Category']])
                   except KeyError:
                      print('No HeatDamagePerShot on ammo; Defaulting to 0.')
                      ammotype_heatdam_dict[data['Category']] = 0
-                     ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                     #ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                     ammotype_heatdam_best_dict[data['Category']] = f.name
                      print('Heatdam ', ammotype_heatdam_dict[data['Category']])
 
                   try:
@@ -93,19 +120,31 @@ for item in ammo_file_list:
                      ammotype_doescluster_dict[data['Category']] = False
                      print(ammotype_doescluster_dict[data['Category']], ' does not Cluster')
                   
-               elif data['Category'] in ammotype_dam_dict.keys():
+               elif data['Category'] in ammotype_dam_multi_dict.keys():
                   print('Existing category, comparing')
                   try:
-                     if data['DamageMultiplier'] > ammotype_dam_dict[data['Category']]:
-                        ammotype_dam_dict[data['Category']] = data['DamageMultiplier']
-                        ammotype_dam_best_dict[data['Category']] = data['Description']['Name']
+                     if data['DamageMultiplier'] > ammotype_dam_multi_dict[data['Category']]:
+                        ammotype_dam_multi_dict[data['Category']] = data['DamageMultiplier']
+                        #ammotype_dam_multi_best_dict[data['Category']] = data['Description']['Name']
+                        ammotype_dam_multi_best_dict[data['Category']] = f.name
+                        print('Dam ', ammotype_dam_multi_dict[data['Category']])
+                  except KeyError:
+                     print('No DamageMultiplier on ammo; Skipping as key already has an entry value higher than this')
+                  
+                  try:
+                     if data['DamagePerShot'] > ammotype_dam_dict[data['Category']]:
+                        ammotype_dam_dict[data['Category']] = data['DamagePerShot']
+                        #ammotype_dam_multi_best_dict[data['Category']] = data['Description']['Name']
+                        ammotype_dam_best_dict[data['Category']] = f.name
                         print('Dam ', ammotype_dam_dict[data['Category']])
                   except KeyError:
-                     print('No DamageMultiplier on ammo; Skipping as key already has an entry of 1 or above')
+                     print('No DamagePerShot on ammo; Skipping as key already has an entry value higher than this.')
+
                   try:
                      if data['HeatDamagePerShot'] > ammotype_heatdam_dict[data['Category']]:
                         ammotype_heatdam_dict[data['Category']] = data['HeatDamagePerShot']
-                        ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                        #ammotype_heatdam_best_dict[data['Category']] = data['Description']['Name']
+                        ammotype_heatdam_best_dict[data['Category']] = f.name
                         print('Heatdam ', ammotype_heatdam_dict[data['Category']])
                   except KeyError:
                      print('No HeatDamagePerShot on ammo; Skipping as key already has an entry of 0 or above')
@@ -113,7 +152,7 @@ for item in ammo_file_list:
                      if ammotype_doescluster_dict[data['Category']] == False:
                         if data['HitGenerator'] == 'Cluster':
                            ammotype_doescluster_dict[data['Category']] = True
-                           print(ammotype_heatdam_dict[data['Category']], ' does cluster!')
+                           print(ammotype_doescluster_dict[data['Category']], ' does cluster!')
                   except KeyError:
                      print('No HitGenerator trait on ammo, skipping.')
             except KeyError:
@@ -125,6 +164,6 @@ for item in ammo_file_list:
         except json.decoder.JSONDecodeError:
             possible_invalid_jsons.append(item)
             print('Possible invalid JSON!')
-print(ammotype_dam_best_dict, ammotype_heatdam_best_dict, ammotype_doescluster_dict)
+print(ammotype_dam_multi_best_dict, ammotype_dam_dict, ammotype_heatdam_best_dict, ammotype_heatdam_dict, ammotype_dam_best_dict, ammotype_dam_dict, ammotype_doescluster_dict)
 
     
