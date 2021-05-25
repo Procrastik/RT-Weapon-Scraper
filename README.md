@@ -5,7 +5,7 @@ This is a personal project to create my own tools for analyzation of files for t
 
 **RT Weapon Scraper**
 The first tool is a weapon spreadsheetizer that pulls all weapons and pertinent data for them in the entire mod directory into a spreadsheet for comparisons.
-This tool also does JSON and Unicode verification.
+This tool also does JSON and Unicode verification. This tool is written with Python 3 and utilizes the libraries os, json, traceback, pandas, time, and re.
 
 The weapon scraper recursively checks the directory tree it is pointed at and returns a .xlsx spreadsheet with all found weapons minus any that are in its excluded list. It also returns separate files for possible invalid JSON files, possible Unicode or text compatibility errors, and a list of any excepted files that were skipped due to filtering.
 
