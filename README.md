@@ -1,7 +1,7 @@
 # RT-Analyzation
 Roguetech Tools
 
-This is a personal project to create my own tools for analyzation of files for the Hare Brained Studios Battletech game mod RogueTech. At this time all tools are written in Python.
+This is a personal project to create my own tools for analyzation of files for the Harebrained Studios Battletech game mod RogueTech. At this time all tools are written in Python.
 
 **RT Weapon Scraper**
 The first tool is a weapon spreadsheetizer that pulls all weapons and pertinent data for them in the entire mod directory into a spreadsheet for comparisons.
