@@ -941,7 +941,7 @@ for item in weapon_file_list:
 
 
          #l.insert(newindex, l.pop(oldindex))
-         current_row.insert(8,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
+         current_row.insert(9,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
 
          df2 = pandas.DataFrame([current_row], columns=columns_list)
          print(df2)
