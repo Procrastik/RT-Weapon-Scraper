@@ -14,11 +14,14 @@ time1 = time.time()#this is simply to test time efficiency
 location = 'D:\RogueTech Git\RogueTech'
 file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry', 'deprecated']
 weapon_file_list = []
+ams_file_list = []
 filtered_files = []
 excepted_files = []
 possible_invalid_jsons = []
 columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Clustering Capable (Weapon or with ammo)', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'Max Ammo Damage', 'Highest Direct Damage Ammo', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Ammo Heat Damage', 'Highest Direct Heat Damage Ammo', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
+ams_columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Tonnage', 'Slots', 'Multi Activate', 'Base Damage Per Shot', 'Base Average Damage', 'Base Max Damage Per Activation', 'Base Shots Per Activation', 'Base Hit Chance', 'Base Heat Per Activation', 'Base Jam Chance', 'Base Max Range', 'Base Protect Allies', 'OL Damage Per Shot', 'OL Average Damage', 'OL Max Damage Per Activation', 'OL Shots Per Activation', 'OL Hit Chance', 'OL Heat Per Activation', 'OL Jam Chance', 'OL Max Range', 'OL Protect Allies', 'Ultimate Damage Per Shot', 'Ultimate Average Damage', 'Ultimate Max Damage Per Activation', 'Ultimate Shots Per Activation', 'Ultimate Hit Chance', 'Ultimate Heat Per Activation', 'Ultimate Jam Chance', 'Ultimate Max Range', 'Ultimate Protect Allies']
 df = pandas.DataFrame(columns=columns_list)
+ams_df = pandas.DataFrame(columns=ams_columns_list)
 ##
 
 ammo_file_list = []
@@ -191,6 +194,9 @@ for r, d, f in os.walk(location):
          print('File has weapon in name: ', item)
          if 'json' in item:
             print('File also has json in name: ', item)
+            if 'AMS' in item:
+               print('AMS in weapon loop, skipping')
+               continue
             for i in file_keyword_exclusion_list:
                print(i, file_in_exclusion_list)
                if i in item:
@@ -202,6 +208,31 @@ for r, d, f in os.walk(location):
             if not file_in_exclusion_list:
                weapon_file_list.append(os.path.join(r, item))
                print('Passed ',item)            
+##
+
+#This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list ams_file_list
+# r=>root, d=>directories, f=>files
+for r, d, f in os.walk(location):
+   print(r)
+   for item in f:
+      file_in_exclusion_list = False
+      if 'AMS' in item:
+         print('File has weapon and AMS in name: ', item)
+         if 'Weapon_' in item:
+            print('File also has Weapon also in name')
+            if 'json' in item:
+               print('File also has json in name: ', item)
+               for i in file_keyword_exclusion_list:
+                  print(i, file_in_exclusion_list)
+                  if i in item:
+                     file_in_exclusion_list = True
+                     continue
+                  elif i in r:
+                     file_in_exclusion_list = True
+                     continue
+               if not file_in_exclusion_list:
+                  ams_file_list.append(os.path.join(r, item))
+                  print('Passed ',item)            
 ##
 
 #this iterates through the identified list of files meeting search criteria, prints the filename and loads them with the json module so you can search them and finally checks if there is any loading errors and adds them to lists to help identify invalid JSONs or bad characters.
@@ -953,6 +984,185 @@ for item in weapon_file_list:
          possible_invalid_jsons.append(item)
          print('Possible invalid JSON!')
 
+#AMS Modules
+for item in ams_file_list:
+   with open(item) as f:
+      print(item)
+      try: 
+         data = json.load(f)
+         current_row_ams = []
+
+         #AMS hardpoint module
+         try:
+            hardpoint_type = str(data['Category'])
+            print(hardpoint_type)
+         except KeyError:
+            print('Missing Hardpoint Type')
+            try:
+                hardpoint_type = str(data['weaponCategoryID'])
+            except KeyError:
+               print('Weapon has no Type?')
+               hardpoint_type = 'N/A'
+         current_row_ams.append(hardpoint_type)
+
+         #AMS type module
+         try:
+            weapon_class = str(data['Type'])
+            print(weapon_class)
+            current_row_ams.append(weapon_class)
+         except KeyError:
+            print('Missing Weapon Type')
+            current_row_ams.append('N/A')
+         
+         #AMS name module
+         try:
+            if 'deprecated' in str(data['Description']['UIName']).lower():
+               print('Deprecated in name, skipping')
+               filtered_files.append(item)
+               continue
+            weapon_name = str(data['Description']['UIName'])
+            print(weapon_name)
+            current_row_ams.append(weapon_name)
+         except KeyError:
+            print('Missing Weapon Name')
+            current_row_ams.append('N/A')
+
+         #AMS Tonnage check module
+         if hardpoint_type == 'Special':
+            weapon_tonnage = data['Custom']['HandHeld']['Tonnage']
+            current_row_ams.append(weapon_tonnage)
+         elif hardpoint_type == 'SpecialMelee':
+            weapon_tonnage = data['Custom']['HandHeld']['Tonnage']
+            current_row_ams.append(weapon_tonnage)
+         else:
+            try:
+               weapon_tonnage = data['Tonnage']
+               print('Tons ' + str(weapon_tonnage))
+               current_row_ams.append(weapon_tonnage)
+               if weapon_tonnage > 50: #this filters deprecated weapons that are 100 to 6666 tons
+                  print('Filtered out deprecated weapon by tonnage')
+                  filtered_files.append(item)
+                  continue
+            except:
+               print('Missing Tonnage')
+               current_row_ams.append('N/A')
+
+         #AMS slot size module
+         try:
+            weapon_slots = data['InventorySize']
+            print('Slots ' + str(weapon_slots))
+            current_row_ams.append(weapon_slots)
+         except:
+            print('Missing Weapon Slots')
+            current_row_ams.append('N/A')
+
+         #AMS multi attack module
+         try:
+            current_row_ams.append(data['AMSShootsEveryAttack'])
+         except KeyError:
+            current_row_ams.append('False')
+
+         #AMS base and OL everything module
+         try:
+            for i in range(len(data['Modes'])):
+               print(i)
+               ams_hitchance = data['Modes'][i]['AMSHitChance'] * 100
+               if data['Modes'][i]['IsAMS'] or data['IsAMS']:
+                  if data['Modes'][i]['Id'] != 'Off' or 'MG' or 'Laser':
+                     print('Is an AMS mode, checking if base mode or not')
+                     if data['Modes'][i]['isBaseMode']:
+                        print('This is the AMS base mode')
+                        current_row_ams.append(data['Modes'][i]['AMSDamage'] + 1)
+                        current_row_ams.append((data['Modes'][i]['AMSDamage'] + 1) * data['Modes'][i]['ShotsWhenFired'] * (ams_hitchance/100))
+                        current_row_ams.append((data['Modes'][i]['AMSDamage'] + 1) * data['Modes'][i]['ShotsWhenFired'])
+                        current_row_ams.append(data['Modes'][i]['ShotsWhenFired'])
+                        current_row_ams.append(ams_hitchance)
+                        try:
+                           current_row_ams.append(data['Modes'][i]['HeatGenerated'])
+                        except KeyError:
+                           print('No Heat on this AMS mode, using zero')
+                           current_row_ams.append(0)
+                        try:
+                           current_row_ams.append(data['Modes'][i]['FlatJammingChance'] * 100)
+                        except KeyError:
+                           print('No jam chance in this AMS mode, using zero')
+                           current_row_ams.append(0)
+                        try:
+                           current_row_ams.append(data['MaxRange'] + data['Modes'][i]['MaxRange'])
+                        except KeyError:
+                           print('No range boost in either base or mode, trying base value')
+                           try:
+                              current_row_ams.append(data['MaxRange'])
+                           except KeyError:
+                              print('No range in base values, checking only mode')
+                              current_row_ams.append(data['Modes'][i]['MaxRange'])
+                        try:
+                           if data['Modes'][i]['isAAMS']:
+                              print('This is an Advanced AMS and will protect allies')
+                              current_row_ams.append('True')
+                           else:
+                              print('This is not an advanced AMS and will not protect allies in this mode')
+                              current_row_ams.append('False')
+                        except KeyError:
+                           print('No isAAMS tag present, this is not an advanced AMS and will not protect allies in this mode')
+                           current_row_ams.append('False')
+                     elif not data['Modes'][i]['IsAMS']:
+                        print(data['Modes'][i]['Id'], ' is not an AMS Mode, skipping')
+                        continue
+                     else:
+                        print('Is an AMS mode, but is not the base mode')
+                        current_row_ams.append(data['Modes'][i]['AMSDamage'] + 1)
+                        current_row_ams.append((data['Modes'][i]['AMSDamage'] + 1) * data['Modes'][i]['ShotsWhenFired'] * (ams_hitchance/100))
+                        current_row_ams.append((data['Modes'][i]['AMSDamage'] + 1) * data['Modes'][i]['ShotsWhenFired'])
+                        current_row_ams.append(data['Modes'][i]['ShotsWhenFired'])
+                        current_row_ams.append(ams_hitchance)
+                        try:
+                           current_row_ams.append(data['Modes'][i]['HeatGenerated'])
+                        except KeyError:
+                           print('No Heat on this AMS mode, using zero')
+                           current_row_ams.append(0)
+                        try:
+                           current_row_ams.append(data['Modes'][i]['FlatJammingChance'] * 100)
+                        except KeyError:
+                           print('No jam chance in this AMS mode, using zero')
+                           current_row_ams.append(0)
+                        try:
+                           current_row_ams.append(data['MaxRange'] + data['Modes'][i]['MaxRange'])
+                        except KeyError:
+                           print('No range boost in either base or mode, trying base value')
+                           try:
+                              current_row_ams.append(data['MaxRange'])
+                           except KeyError:
+                              print('No range in base values, checking only mode')
+                              current_row_ams.append(data['Modes'][i]['MaxRange'])
+                        try:
+                           if data['Modes'][i]['isAAMS']:
+                              print('This is an Advanced AMS and will protect allies')
+                              current_row_ams.append('True')
+                           else:
+                              print('This is not an advanced AMS and will not protect allies in this mode')
+                              current_row_ams.append('False')
+                        except KeyError:
+                           print('No isAAMS tag present, this is not an advanced AMS and will not protect allies in this mode')
+                           current_row_ams.append('False')
+         except KeyError:
+            print('Not an AMS mode, skipping')
+            traceback.print_exc()
+         if len(current_row_ams) < 33:
+            for i in range(33 - len(current_row_ams)):
+               current_row_ams.append('N/A')
+         print(current_row_ams)
+         ams_df2 = pandas.DataFrame([current_row_ams], columns=ams_columns_list)
+         print(ams_df2)
+         ams_df = ams_df.append(ams_df2)
+
+      except UnicodeDecodeError:
+         excepted_files.append(item)
+         print('Possible invalid character in JSON')
+      except json.decoder.JSONDecodeError:
+         possible_invalid_jsons.append(item)
+         print('Possible invalid JSON!')
+      
 #Used to write filenames of different types of excepted files to separate text files for analyzation later
 with open("filtered files.txt", "w") as output:
    for item in filtered_files:
@@ -966,5 +1176,7 @@ with open("possible invalid JSON.txt", "w") as output:
    for item in possible_invalid_jsons:
        output.write(str(item) + '\n')
 ##
-df.to_excel('RT Weaponlist.xlsx',sheet_name='Weapons',index=False)
+with pandas.ExcelWriter('RT Weaponlist.xlsx') as writer:
+   df.to_excel(writer,sheet_name='Weapons',index=False)
+   ams_df.to_excel(writer,sheet_name='AMS',index=False)
 print('Parsed in', time.time() - time1, 'seconds')
