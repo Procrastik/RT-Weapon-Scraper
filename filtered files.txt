@@ -106,5 +106,5 @@ D:\RogueTech Git\RogueTech\RogueModuleTech\Quirks\VanillaNoLootWeapons\Weapon_SR
 D:\RogueTech Git\RogueTech\RogueModuleTech\Quirks\VanillaNoLootWeapons\Weapon_SRM_SRM6_2-Holly.json
 D:\RogueTech Git\RogueTech\RogueModuleTech\Quirks\VanillaNoLootWeapons\Weapon_SRM_SRM6_2-Irian.json
 D:\RogueTech Git\RogueTech\RogueModuleTech\Quirks\VanillaNoLootWeapons\Weapon_SRM_SRM6_3-Valiant.json
-D:\RogueTech Git\RogueTech\RogueModuleTech\Weapons\Weapon_Artillery_ArrowIV_ReportMe.json
-D:\RogueTech Git\RogueTech\RogueModuleTech\Weapons\Weapon_Flamer_REPORTME.json
+D:\RogueTech Git\RogueTech\RogueModuleTech\Quirks\Weapon\Weapon_Artillery_ArrowIV_ReportMe.json
+D:\RogueTech Git\RogueTech\RogueModuleTech\Quirks\Weapon\Weapon_Flamer_REPORTME.json

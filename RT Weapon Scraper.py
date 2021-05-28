@@ -14,11 +14,14 @@ time1 = time.time()#this is simply to test time efficiency
 location = 'D:\RogueTech Git\RogueTech'
 file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry', 'deprecated']
 weapon_file_list = []
+ams_file_list = []
 filtered_files = []
 excepted_files = []
 possible_invalid_jsons = []
 columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Clustering Capable (Weapon or with ammo)', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'Max Ammo Damage', 'Highest Direct Damage Ammo', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Ammo Heat Damage', 'Highest Direct Heat Damage Ammo', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
+ams_columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Tonnage', 'Slots', 'Multiple Activations Per Round', 'Base Damage Per Shot', 'Base Average Damage', 'Base Max Damage Per Activation', 'Base Shots Per Activation', 'Base Hit Chance', 'Base Heat Per Activation', 'Base Jam Chance', 'Base Max Range', 'Base Protect Allies', 'OL Damage Per Shot', 'OL Average Damage', 'OL Max Damage Per Activation', 'OL Shots Per Activation', 'OL Hit Chance', 'OL Heat Per Activation', 'OL Jam Chance', 'OL Max Range', 'OL Protect Allies', 'Full Power Damage Per Shot', 'Full Power Average Damage', 'Full Power Max Damage Per Activation', 'Full Power Shots Per Activation', 'Full Power Hit Chance', 'Full Power Heat Per Activation', 'Full Power Jam Chance', 'Full Power Max Range', 'Full Power Protect Allies']
 df = pandas.DataFrame(columns=columns_list)
+ams_df = pandas.DataFrame(columns=ams_columns_list)
 ##
 
 ammo_file_list = []
@@ -191,6 +194,9 @@ for r, d, f in os.walk(location):
          print('File has weapon in name: ', item)
          if 'json' in item:
             print('File also has json in name: ', item)
+            if 'AMS' in item:
+               print('AMS in weapon loop, skipping')
+               continue
             for i in file_keyword_exclusion_list:
                print(i, file_in_exclusion_list)
                if i in item:
@@ -202,6 +208,31 @@ for r, d, f in os.walk(location):
             if not file_in_exclusion_list:
                weapon_file_list.append(os.path.join(r, item))
                print('Passed ',item)            
+##
+
+#This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list ams_file_list
+# r=>root, d=>directories, f=>files
+for r, d, f in os.walk(location):
+   print(r)
+   for item in f:
+      file_in_exclusion_list = False
+      if 'AMS' in item:
+         print('File has weapon and AMS in name: ', item)
+         if 'Weapon_' in item:
+            print('File also has Weapon also in name')
+            if 'json' in item:
+               print('File also has json in name: ', item)
+               for i in file_keyword_exclusion_list:
+                  print(i, file_in_exclusion_list)
+                  if i in item:
+                     file_in_exclusion_list = True
+                     continue
+                  elif i in r:
+                     file_in_exclusion_list = True
+                     continue
+               if not file_in_exclusion_list:
+                  ams_file_list.append(os.path.join(r, item))
+                  print('Passed ',item)            
 ##
 
 #this iterates through the identified list of files meeting search criteria, prints the filename and loads them with the json module so you can search them and finally checks if there is any loading errors and adds them to lists to help identify invalid JSONs or bad characters.
@@ -941,7 +972,7 @@ for item in weapon_file_list:
 
 
          #l.insert(newindex, l.pop(oldindex))
-         current_row.insert(9,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet
+         current_row.insert(9,current_row.pop(3)) #this rearranges the current_row list to properly format it for the excel sheet; this should go bye bye in next version, just use variables and append them all at the end man!
 
          df2 = pandas.DataFrame([current_row], columns=columns_list)
          print(df2)
@@ -953,18 +984,593 @@ for item in weapon_file_list:
          possible_invalid_jsons.append(item)
          print('Possible invalid JSON!')
 
-#Used to write filenames of different types of excepted files to separate text files for analyzation later
+#AMS Modules
+for item in ams_file_list:
+   with open(item) as f:
+      print(item)
+      try: 
+         data = json.load(f)
+         current_row_ams = []
+         #Initializing all loop variables in so any unused do not throw off row alignment by being empty
+         basemode_ams_damage = 'N/A'
+         basemode_ams_hitchance = 'N/A'
+         basemode_ams_shots = 'N/A'
+         basemode_ams_avg_damage = 'N/A'
+         basemode_ams_heat = 'N/A'
+         basemode_ams_jam = 'N/A'
+         basemode_ams_maxrange = 'N/A'
+         basemode_aams = 'N/A'
+         olmode_ams_damage = 'N/A'
+         olmode_ams_hitchance = 'N/A'
+         olmode_ams_shots = 'N/A'
+         olmode_ams_avg_damage = 'N/A'
+         olmode_ams_heat = 'N/A'
+         olmode_ams_jam = 'N/A'
+         olmode_ams_maxrange = 'N/A'
+         olmode_aams = 'N/A'
+         fpmode_ams_damage = 'N/A'
+         fpmode_ams_hitchance = 'N/A'
+         fpmode_ams_shots = 'N/A'
+         fpmode_ams_avg_damage = 'N/A'
+         fpmode_ams_heat = 'N/A'
+         fpmode_ams_jam = 'N/A'
+         fpmode_ams_maxrange = 'N/A'
+         fpmode_aams = 'N/A'
+
+         #AMS hardpoint module
+         try:
+            hardpoint_type = str(data['Category'])
+            print(hardpoint_type)
+         except KeyError:
+            print('Missing Hardpoint Type')
+            try:
+                hardpoint_type = str(data['weaponCategoryID'])
+            except KeyError:
+               print('Weapon has no Type?')
+               hardpoint_type = 'N/A'
+         current_row_ams.append(hardpoint_type)
+
+         #AMS type module
+         try:
+            weapon_class = str(data['Type'])
+            print(weapon_class)
+            current_row_ams.append(weapon_class)
+         except KeyError:
+            print('Missing Weapon Type')
+            current_row_ams.append('N/A')
+         
+         #AMS name module
+         try:
+            if 'deprecated' in str(data['Description']['UIName']).lower():
+               print('Deprecated in name, skipping')
+               filtered_files.append(item)
+               continue
+            weapon_name = str(data['Description']['UIName'])
+            print(weapon_name)
+            current_row_ams.append(weapon_name)
+         except KeyError:
+            print('Missing Weapon Name')
+            current_row_ams.append('N/A')
+
+         #AMS Tonnage check module
+         if hardpoint_type == 'Special':
+            weapon_tonnage = data['Custom']['HandHeld']['Tonnage']
+            current_row_ams.append(weapon_tonnage)
+         elif hardpoint_type == 'SpecialMelee':
+            weapon_tonnage = data['Custom']['HandHeld']['Tonnage']
+            current_row_ams.append(weapon_tonnage)
+         else:
+            try:
+               weapon_tonnage = data['Tonnage']
+               print('Tons ' + str(weapon_tonnage))
+               current_row_ams.append(weapon_tonnage)
+               if weapon_tonnage > 50: #this filters deprecated weapons that are 100 to 6666 tons
+                  print('Filtered out deprecated weapon by tonnage')
+                  filtered_files.append(item)
+                  continue
+            except:
+               print('Missing Tonnage')
+               current_row_ams.append('N/A')
+
+         #AMS slot size module
+         try:
+            weapon_slots = data['InventorySize']
+            print('Slots ' + str(weapon_slots))
+            current_row_ams.append(weapon_slots)
+         except:
+            print('Missing Weapon Slots')
+            current_row_ams.append('N/A')
+
+         #AMS multi attack module
+         try:
+            if data['AMSShootsEveryAttack']:
+               current_row_ams.append('True')
+            else:
+               current_row_ams.append('False')               
+         except KeyError:
+            current_row_ams.append('False')
+
+         #AMS modes everything module
+         try:
+            for i in range(len(data['Modes'])):
+               print(i)
+               is_AMS = False
+               try:
+                  if data['Modes'][i]['IsAMS'] or data['IsAMS']:
+                     print('This mode or base is isAMS')
+                     is_AMS = 'True'
+               except KeyError:
+                  print('Missing isAMS key in either modes or base, checking base now')
+                  try:
+                     if data['IsAMS']:
+                        print('Base isAMS')
+                        is_AMS = 'True'
+                  except KeyError:
+                     print('Missing isAMS key in both modes and base; either this is not an AMS or this mode is not an AMS')
+                     continue
+         #base mode check
+               if is_AMS and data['Modes'][i]['isBaseMode'] and data['Modes'][i]['Id'] != 'Off' and data['Modes'][i]['Id'] != 'MG' and data['Modes'][i]['Id'] != 'Laser':
+                  print('This is the AMS base mode')
+                  basemode_ams_damage = 0
+                  try:
+                     basemode_ams_damage = data['Modes'][i]['AMSDamage'] + data['AMSDamage'] + 1
+                     print('Basemode AMS damage is ',str(basemode_ams_damage))
+                  except KeyError:
+                     try:
+                        basemode_ams_damage = data['Modes'][i]['AMSDamage'] + 1
+                     except KeyError:                        
+                        try:
+                           print('No Mode AMS Damage, trying base')
+                           basemode_ams_damage = data['AMSDamage'] + 1
+                           print('Basemode AMS damage is ', str(basemode_ams_damage))
+                        except KeyError:
+                           print('No mode or base AMS Damage, defaulting to 1')
+                           basemode_ams_damage = 1
+                  
+                  basemode_ams_hitchance = 0
+                  try:
+                     basemode_ams_hitchance = data['Modes'][i]['AMSHitChance']
+                     print('Basemode AMS hitchance is ', str(basemode_ams_hitchance))
+                  except KeyError:
+                     print('No AMS Hitchance in mode, checking base')
+                     try:
+                        basemode_ams_hitchance = data['AMSHitChance']
+                        print('Basemode AMS hitchance is ', str(basemode_ams_hitchance))
+                     except KeyError:
+                        print('No AMS Hitchance at all!?')
+
+                  basemode_ams_shots = 0
+                  try:
+                     basemode_ams_shots = data['ShotsWhenFired'] + data['Modes'][i]['ShotsWhenFired']
+                     print('Basemode AMS ShotsWhenFired is ', str(basemode_ams_shots))
+                  except KeyError:
+                     print('No ShotsWhenFired in mode or base, checking bas only')
+                     try:
+                        basemode_ams_shots = data['ShotsWhenFired']
+                        print(' AMS ShotsWhenFired is ', str(basemode_ams_shots))
+                     except KeyError:
+                        print('No ShotsWhenFired at all?')
+
+                  basemode_ams_avg_damage = 0
+                  try:
+                     basemode_ams_avg_damage = basemode_ams_damage * basemode_ams_shots * basemode_ams_hitchance
+                     print('Basemode AMS average damage is ', str(basemode_ams_avg_damage))
+                  except:
+                     traceback.print_exc()
+                     print('This should not be reachable! AMS avg damage error.')
+                  
+                  basemode_ams_heat = 0
+                  try:
+                     basemode_ams_heat = data['Modes'][i]['HeatGenerated'] + data['HeatGenerated']
+                     print('Basemode AMS heat is ', str(basemode_ams_heat))
+                  except KeyError:
+                     print('No heat in modes or base, trying base.')
+                     try:
+                        basemode_ams_heat = data['HeatGenerated']
+                        print('AMS heat is ', str(basemode_ams_heat))
+                     except KeyError:
+                        print('No heat on AMS, defaulting to 0')
+
+                  basemode_ams_jam = 0
+                  try:
+                     basemode_ams_jam =  data['FlatJammingChance'] * 100
+                     try:
+                        basemode_ams_jam = (data['Modes'][i]['FlatJammingChance'] + data['FlatJammingChance']) * 100
+                        print('Basemode AMS jam chance is ', str(basemode_ams_jam))
+                     except KeyError:
+                        print('No mode jam chance, using base')
+                  except KeyError:
+                     print('No base jam chance, checking modes')
+                     try:
+                        basemode_ams_jam = data['Modes'][i]['FlatJammingChance'] * 100
+                        print('Basemode AMS jam chance is ', str(basemode_ams_jam))
+                     except KeyError:
+                        print('No jam chance on AMS, using zero')
+
+                  basemode_ams_maxrange = 0   
+                  try:
+                     basemode_ams_maxrange = data['MaxRange'] + data['Modes'][i]['MaxRange']
+                     print('Basemode AMS max range is ', str(basemode_ams_maxrange))
+                  except KeyError:
+                     print('No range boost in either base or mode, trying base value')
+                     try:
+                        basemode_ams_maxrange = data['MaxRange']
+                        print('Basemode AMS max range is ', str(basemode_ams_maxrange))
+                     except KeyError:
+                        print('No range in base values, checking only mode')
+                        basemode_ams_maxrange = data['Modes'][i]['MaxRange']
+                        print('Basemode AMS max range is ', str(basemode_ams_maxrange))
+
+                  basemode_aams = 'False'
+                  try:
+                     print(data['Modes'][i]['IsAAMS'])
+                     if data['Modes'][i]['IsAAMS']:
+                        print('This is an Advanced AMS and will protect allies')
+                        basemode_aams = 'True'
+                  except KeyError:
+                     print('No isAAMS tag present in modes, trying base')
+                     try:
+                        print(data['IsAAMS'])
+                        if data['IsAAMS']:
+                           print('This is an Advanced AMS and will protect allies')
+                           basemode_aams = 'True'
+                     except KeyError:
+                        print('This is not an advanced AMS and will not protect allies in this mode')
+                        basemode_aams = 'False'
+               elif is_AMS and data['Modes'][i]['Id'] == 'Overload': #Overload mode
+                  print('This is Overload Mode')
+                  olmode_ams_damage = 0
+                  try:
+                     olmode_ams_damage = data['Modes'][i]['AMSDamage'] + data['AMSDamage'] + 1
+                     print('Overload AMS damage is ',str(olmode_ams_damage))
+                  except KeyError:
+                     try:
+                        olmode_ams_damage = data['Modes'][i]['AMSDamage'] + 1
+                     except KeyError:
+                        try:
+                           print('No Mode AMS Damage, trying base')
+                           olmode_ams_damage = data['AMSDamage'] + 1
+                           print('Overload AMS damage is ', str(olmode_ams_damage))
+                        except KeyError:
+                           print('No mode or base AMS Damage, defaulting to 1')
+                           olmode_ams_damage = 1
+                  
+                  olmode_ams_hitchance = 0
+                  try:
+                     olmode_ams_hitchance = data['Modes'][i]['AMSHitChance']
+                     print('Overload AMS hitchance is ', str(olmode_ams_hitchance))
+                  except KeyError:
+                     print('No AMS Hitchance in mode, checking base')
+                     try:
+                        olmode_ams_hitchance = data['AMSHitChance']
+                        print('Overload AMS hitchance is ', str(olmode_ams_hitchance))
+                     except KeyError:
+                        print('No AMS Hitchance at all!?')
+
+                  olmode_ams_shots = 0
+                  try:
+                     olmode_ams_shots = data['ShotsWhenFired'] + data['Modes'][i]['ShotsWhenFired']
+                     print('Overload AMS ShotsWhenFired is ', str(olmode_ams_shots))
+                  except KeyError:
+                     print('No ShotsWhenFired in mode or base, checking bas only')
+                     try:
+                        olmode_ams_shots = data['ShotsWhenFired']
+                        print('Overload AMS ShotsWhenFired is ', str(olmode_ams_shots))
+                     except KeyError:
+                        print('No ShotsWhenFired at all?')
+
+                  olmode_ams_avg_damage = 0
+                  try:
+                     olmode_ams_avg_damage = olmode_ams_damage * olmode_ams_shots * olmode_ams_hitchance
+                     print('Overload AMS average damage is ', str(olmode_ams_avg_damage))
+                  except:
+                     traceback.print_exc()
+                     print('This should not be reachable! AMS avg damage error.')
+                  
+                  olmode_ams_heat = 0
+                  try:
+                     olmode_ams_heat = data['Modes'][i]['HeatGenerated'] + data['HeatGenerated']
+                     print('Overload AMS heat is ', str(olmode_ams_heat))
+                  except KeyError:
+                     print('No heat in modes or base, trying base.')
+                     try:
+                        olmode_ams_heat = data['HeatGenerated']
+                        print('Overload AMS heat is ', str(olmode_ams_heat))
+                     except KeyError:
+                        print('No heat on AMS, defaulting to 0')
+
+                  olmode_ams_jam = 0
+                  try:
+                     olmode_ams_jam =  data['FlatJammingChance'] * 100
+                     try:
+                        olmode_ams_jam = (data['Modes'][i]['FlatJammingChance'] + data['FlatJammingChance']) * 100
+                        print('Overload AMS jam chance is ', str(olmode_ams_jam))
+                     except KeyError:
+                        print('No mode jam chance, using base')
+                  except KeyError:
+                     print('No base jam chance, checking modes')
+                     try:
+                        olmode_ams_jam = data['Modes'][i]['FlatJammingChance'] * 100
+                        print('Overload AMS jam chance is ', str(olmode_ams_jam))
+                     except KeyError:
+                        print('No jam chance on AMS, using zero')
+
+                  olmode_ams_maxrange = 0   
+                  try:
+                     olmode_ams_maxrange = data['MaxRange'] + data['Modes'][i]['MaxRange']
+                     print('Overload AMS max range is ', str(olmode_ams_maxrange))
+                  except KeyError:
+                     print('No range boost in either base or mode, trying base value')
+                     try:
+                        olmode_ams_maxrange = data['MaxRange']
+                        print('Overload AMS max range is ', str(olmode_ams_maxrange))
+                     except KeyError:
+                        print('No range in base values, checking only mode')
+                        olmode_ams_maxrange = data['Modes'][i]['MaxRange']
+                        print('Overload AMS max range is ', str(olmode_ams_maxrange))
+
+                  olmode_aams = 'False'
+                  try:
+                     print(data['Modes'][i]['IsAAMS'])
+                     if data['Modes'][i]['IsAAMS']:
+                        print('This is an Advanced AMS and will protect allies')
+                        olmode_aams = 'True'
+                  except KeyError:
+                     print('No isAAMS tag present in modes, trying base')
+                     try:
+                        print(data['IsAAMS'])
+                        if data['IsAAMS']:
+                           print('This is an Advanced AMS and will protect allies')
+                           olmode_aams = 'True'
+                     except KeyError:
+                        print('This is not an advanced AMS and will not protect allies in this mode')
+                        olmode_aams = 'False'
+
+               elif is_AMS and data['Modes'][i]['Id'] == 'FullPower': #FullPower mode for Clan Advanced LAMS only
+                  print('This is FullPower Mode')
+                  try:
+                     fpmode_ams_damage = data['Modes'][i]['AMSDamage'] + data['AMSDamage'] + 1
+                     print('FullPower AMS damage is ',str(fpmode_ams_damage))
+                  except KeyError:
+                     try:
+                        fpmode_ams_damage = data['Modes'][i]['AMSDamage'] + 1
+                     except KeyError:  
+                        try:
+                           print('No Mode AMS Damage, trying base')
+                           fpmode_ams_damage = data['AMSDamage'] + 1
+                           print('FullPower AMS damage is ', str(fpmode_ams_damage))
+                        except KeyError:
+                           print('No mode or base AMS Damage, defaulting to 1')
+                           fpmode_ams_damage = 1
+                  
+                  fpmode_ams_hitchance = 0
+                  try:
+                     fpmode_ams_hitchance = data['Modes'][i]['AMSHitChance']
+                     print('FullPower AMS hitchance is ', str(fpmode_ams_hitchance))
+                  except KeyError:
+                     print('No AMS Hitchance in mode, checking base')
+                     try:
+                        fpmode_ams_hitchance = data['AMSHitChance']
+                        print('FullPower AMS hitchance is ', str(fpmode_ams_hitchance))
+                     except KeyError:
+                        print('No AMS Hitchance at all!?')
+
+                  fpmode_ams_shots = 0
+                  try:
+                     fpmode_ams_shots = data['ShotsWhenFired'] + data['Modes'][i]['ShotsWhenFired']
+                     print('FullPower AMS ShotsWhenFired is ', str(fpmode_ams_shots))
+                  except KeyError:
+                     print('No ShotsWhenFired in mode or base, checking bas only')
+                     try:
+                        fpmode_ams_shots = data['ShotsWhenFired']
+                        print('FullPower AMS ShotsWhenFired is ', str(fpmode_ams_shots))
+                     except KeyError:
+                        print('No ShotsWhenFired at all?')
+
+                  fpmode_ams_avg_damage = 0
+                  try:
+                     fpmode_ams_avg_damage = fpmode_ams_damage * fpmode_ams_shots * fpmode_ams_hitchance
+                     print('FullPower AMS average damage is ', str(fpmode_ams_avg_damage))
+                  except:
+                     traceback.print_exc()
+                     print('This should not be reachable! AMS avg damage error.')
+                  
+                  fpmode_ams_heat = 0
+                  try:
+                     fpmode_ams_heat = data['Modes'][i]['HeatGenerated'] + data['HeatGenerated']
+                     print('FullPower AMS heat is ', str(fpmode_ams_heat))
+                  except KeyError:
+                     print('No heat in modes or base, trying base.')
+                     try:
+                        fpmode_ams_heat = data['HeatGenerated']
+                        print('FullPower AMS heat is ', str(fpmode_ams_heat))
+                     except KeyError:
+                        print('No heat on AMS, defaulting to 0')
+
+                  fpmode_ams_jam = 0
+                  try:
+                     fpmode_ams_jam =  data['FlatJammingChance'] * 100
+                     try:
+                        fpmode_ams_jam = (data['Modes'][i]['FlatJammingChance'] + data['FlatJammingChance']) * 100
+                        print('FullPower AMS jam chance is ', str(fpmode_ams_jam))
+                     except KeyError:
+                        print('No mode jam chance, using base')
+                  except KeyError:
+                     print('No base jam chance, checking modes')
+                     try:
+                        fpmode_ams_jam = data['Modes'][i]['FlatJammingChance'] * 100
+                        print('FullPower AMS jam chance is ', str(fpmode_ams_jam))
+                     except KeyError:
+                        print('No jam chance on AMS, using zero')
+
+                  fpmode_ams_maxrange = 0   
+                  try:
+                     fpmode_ams_maxrange = data['MaxRange'] + data['Modes'][i]['MaxRange']
+                     print('FullPower AMS max range is ', str(fpmode_ams_maxrange))
+                  except KeyError:
+                     print('No range boost in either base or mode, trying base value')
+                     try:
+                        fpmode_ams_maxrange = data['MaxRange']
+                        print('FullPower AMS max range is ', str(fpmode_ams_maxrange))
+                     except KeyError:
+                        print('No range in base values, checking only mode')
+                        fpmode_ams_maxrange = data['Modes'][i]['MaxRange']
+                        print('Overload AMS max range is ', str(fpmode_ams_maxrange))
+
+                  fpmode_aams = 'False'
+                  try:
+                     if data['Modes'][i]['IsAAMS']:
+                        print('This is an Advanced AMS and will protect allies')
+                        fpmode_aams = 'True'
+                  except KeyError:
+                     print('No isAAMS tag present in modes, trying base')
+                     try:
+                        if data['IsAAMS']:
+                           print('This is an Advanced AMS and will protect allies')
+                           fpmode_aams = 'True'
+                     except KeyError:
+                        print('This is not an advanced AMS and will not protect allies in this mode')
+                        fpmode_aams = 'False'
+               else:
+                  print('Not an AMS mode, skipping')
+                  continue
+         except KeyError:
+            print('AMS has no modes, trying base values')
+            traceback.print_exc()
+            basemode_ams_damage = 0
+            try:
+               print('No Mode AMS Damage, trying base')
+               basemode_ams_damage = data['AMSDamage'] + 1
+               print('Basemode AMS damage is ', str(basemode_ams_damage))
+            except KeyError:
+               print('No mode or base AMS Damage, defaulting to 1')
+               basemode_ams_damage = 1
+            
+            basemode_ams_hitchance = 0
+            try:
+               basemode_ams_hitchance = data['AMSHitChance']
+               print('Basemode AMS hitchance is ', str(basemode_ams_hitchance))
+            except KeyError:
+               print('No AMS Hitchance at all!?')
+
+            basemode_ams_shots = 0
+            try:
+               basemode_ams_shots = data['ShotsWhenFired']
+               print(' AMS ShotsWhenFired is ', str(basemode_ams_shots))
+            except KeyError:
+               print('No ShotsWhenFired at all?')
+
+            basemode_ams_avg_damage = 0
+            try:
+               basemode_ams_avg_damage = basemode_ams_damage * basemode_ams_shots * basemode_ams_hitchance
+               print('Basemode AMS average damage is ', str(basemode_ams_avg_damage))
+            except:
+               traceback.print_exc()
+               print('This should not be reachable! AMS avg damage error.')
+            
+            basemode_ams_heat = 0
+            try:
+               basemode_ams_heat = data['HeatGenerated']
+               print('AMS heat is ', str(basemode_ams_heat))
+            except KeyError:
+               print('No heat on AMS, defaulting to 0')
+
+            basemode_ams_jam = 0
+            try:
+               basemode_ams_jam =  data['FlatJammingChance'] * 100
+            except KeyError:
+               print('No base jam chance, defaulting to zero')
+
+            basemode_ams_maxrange = 0
+            try:
+               basemode_ams_maxrange = data['MaxRange']
+               print('Basemode AMS max range is ', str(basemode_ams_maxrange))
+            except KeyError:
+               print('No range on AMS, this thing is useless?')
+   
+            basemode_aams = 'False'
+            try:
+               print(data['IsAAMS'])
+               if data['IsAAMS']:
+                  print('This is an Advanced AMS and will protect allies')
+                  basemode_aams = 'True'
+               else:
+                  print('This is not an advanced AMS and will not protect allies in this mode')
+                  basemode_aams = 'False'
+            except KeyError:
+               print('No isAAMS tag present, this is not an advanced AMS and will not protect allies in this mode')
+               basemode_aams = 'False'
+
+         current_row_ams.append(basemode_ams_damage)
+         current_row_ams.append(basemode_ams_avg_damage)
+         try:
+            current_row_ams.append(basemode_ams_damage * basemode_ams_shots)
+         except TypeError:
+            current_row_ams.append('N/A')
+         current_row_ams.append(basemode_ams_shots)
+         current_row_ams.append(basemode_ams_hitchance)
+         current_row_ams.append(basemode_ams_heat)
+         current_row_ams.append(basemode_ams_jam)
+         current_row_ams.append(basemode_ams_maxrange)
+         current_row_ams.append(basemode_aams)
+         current_row_ams.append(olmode_ams_damage)
+         current_row_ams.append(olmode_ams_avg_damage)
+         try:
+            current_row_ams.append(olmode_ams_damage * olmode_ams_shots)
+         except TypeError:
+            current_row_ams.append('N/A')
+         current_row_ams.append(olmode_ams_shots)
+         current_row_ams.append(olmode_ams_hitchance)
+         current_row_ams.append(olmode_ams_heat)
+         current_row_ams.append(olmode_ams_jam)
+         current_row_ams.append(olmode_ams_maxrange)
+         current_row_ams.append(olmode_aams)
+         current_row_ams.append(fpmode_ams_damage)
+         current_row_ams.append(fpmode_ams_avg_damage)
+         try:
+            current_row_ams.append(fpmode_ams_damage * fpmode_ams_shots)
+         except TypeError:
+            current_row_ams.append('N/A')
+         current_row_ams.append(fpmode_ams_shots)
+         current_row_ams.append(fpmode_ams_hitchance)
+         current_row_ams.append(fpmode_ams_heat)
+         current_row_ams.append(fpmode_ams_jam)
+         current_row_ams.append(fpmode_ams_maxrange)
+         current_row_ams.append(fpmode_aams)
+
+         if len(current_row_ams) < 33:
+            for i in range(33 - len(current_row_ams)):
+               current_row_ams.append('???')
+         print(current_row_ams)
+         ams_df2 = pandas.DataFrame([current_row_ams], columns=ams_columns_list)
+         print(ams_df2)
+         ams_df = ams_df.append(ams_df2)
+
+      except UnicodeDecodeError:
+         excepted_files.append(item)
+         print('Possible invalid character in JSON')
+      except json.decoder.JSONDecodeError:
+         possible_invalid_jsons.append(item)
+         print('Possible invalid JSON!')
+##End of the JSON.load() try statement from line 242
+      
+#These are used to write filenames of different types of excepted files to separate text files for analyzation later
+#For tracking all files filtered from exclusion list and other filter checks
 with open("filtered files.txt", "w") as output:
    for item in filtered_files:
        output.write(str(item) + '\n')
-
+#For items that return a UnicodeDecodeError, most likely due to odd characters in the file.
 with open("excepted files.txt", "w") as output:
    for item in excepted_files:
        output.write(str(item) + '\n')
-
+#For items that return a JSONDecodeError, these are almost certainly an invalid or incorrectly formatted JSON file.
 with open("possible invalid JSON.txt", "w") as output:
    for item in possible_invalid_jsons:
        output.write(str(item) + '\n')
 ##
-df.to_excel('RT Weaponlist.xlsx',sheet_name='Weapons',index=False)
+
+#Writes the fully formed Pandas DataFrames to their respective sheets of the final spreadsheet file
+with pandas.ExcelWriter('RT Weaponlist.xlsx') as writer:
+   df.to_excel(writer,sheet_name='Weapons',index=False)
+   ams_df.to_excel(writer,sheet_name='AMS',index=False)
 print('Parsed in', time.time() - time1, 'seconds')
