@@ -741,21 +741,25 @@ for item in weapon_file_list:
          #weapon can misfire module
          try:
             weapon_misfire = 'False'
-            weapon_misfire = str(data['DamageOnJamming'])
-            try:
-               weapon_misfire = str(data['Modes'][max_dam_mode]['DamageOnJamming'])
-            except KeyError:
-               print('Weapon has no modes, or no base, checking for modes')
+            if data['DamageOnJamming']:               
+               weapon_misfire = 'True'
+            else:
+               try:
+                  if data['Modes'][max_dam_mode]['DamageOnJamming']:
+                     weapon_misfire = 'True in Mode'
+               except KeyError:
+                  print('Weapon has no modes, or no base, checking for modes')
          except KeyError:
             try:
-               weapon_misfire = str(data['Modes'][max_dam_mode]['DamageOnJamming'])
+               if data['Modes'][max_dam_mode]['DamageOnJamming']:
+                  weapon_misfire = 'True in Mode'
             except (KeyError, IndexError) as e:
-               print('Weapon has no modes, checking ComponentTags for wr tags')
-               try:
-                  if 'wr-damage_when_jam' in data['ComponentTags']['items']:
-                     weapon_misfire = 'True'
-               except KeyError:
-                  print('No jamming on this weapon')
+               print('Weapon has no modes')
+         try:
+            if 'wr-damage_when_jam' in data['ComponentTags']['items']:
+               weapon_misfire = 'True'
+         except KeyError:
+            print('No jamming on this weapon')                 
          if weapon_misfire == 'False':
             try:
                for i in data['Custom']['BonusDescriptions']['Bonuses']:
