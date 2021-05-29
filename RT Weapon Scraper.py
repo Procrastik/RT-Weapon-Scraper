@@ -12,7 +12,7 @@ time1 = time.time()#this is simply to test time efficiency
 
 #change location variable to point to root of install location you want to analyze.
 location = 'D:\RogueTech Git\RogueTech'
-file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry', 'deprecated']
+file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry', 'deprecated', 'Nuke']#add anything you would like excluded here
 weapon_file_list = []
 ams_file_list = []
 filtered_files = []
@@ -32,6 +32,9 @@ ammotype_heatdam_best_dict = {}
 ammotype_doescluster_dict = {}
 ammotype_dam_multi_dict = {}
 ammotype_dam_multi_best_dict = {}
+ammotype_dam_AOE_dict = {}
+ammotype_dam_AOE_best_dict = {}
+ammotype_radius_AOE_dict = {}
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list ammo_file_list
@@ -126,6 +129,27 @@ for item in ammo_file_list:
                      print('No HitGenerator trait on ammo, defaulting to False')
                      ammotype_doescluster_dict[data['Category']] = False
                      print(ammotype_doescluster_dict[data['Category']], ' does not Cluster')
+
+                  try:
+                     if data['AOEDamage'] > 0:
+                        ammotype_dam_AOE_dict[data['Category']] = data['AOEDamage']
+                        ammotype_dam_AOE_best_dict[data['Category']] = f.name
+                        print('AOE dam ', ammotype_dam_AOE_dict[data['Category']])
+                     else:
+                        print('No AOE damage on ammo; Defaulting to 0.')
+                        ammotype_dam_AOE_dict[data['Category']] = 0
+                        ammotype_dam_AOE_best_dict[data['Category']] = f.name
+                  except KeyError:
+                     print('No AOE damage on ammo; Defaulting to 0.')
+                     ammotype_dam_AOE_dict[data['Category']] = 0
+                     ammotype_dam_AOE_best_dict[data['Category']] = f.name
+
+                  try:
+                     if data['AOERange'] > 0:
+                        ammotype_radius_AOE_dict[data['Category']] = data['AOERange']
+                  except KeyError:
+                     print('No AOE range on ammo; Defaulting to 0.')
+                     ammotype_radius_AOE_dict[data['Category']] = 0
                   
                elif data['Category'] in ammotype_dam_multi_dict.keys():#this block compares existing key values to the currently evaluated ammo type
                   print('Existing category, comparing')
@@ -173,6 +197,23 @@ for item in ammo_file_list:
                            print(ammotype_doescluster_dict[data['Category']], ' does cluster!')
                   except KeyError:
                      print('No HitGenerator trait on ammo, skipping.')
+
+                  try:
+                     if data['AOEDamage'] > ammotype_dam_AOE_dict[data['Category']]:
+                        ammotype_dam_AOE_dict[data['Category']] = data['AOEDamage']
+                        ammotype_dam_AOE_best_dict[data['Category']] = f.name
+                        print('AOE dam ', ammotype_dam_AOE_dict[data['Category']])
+                     elif data['DamagePerShot'] == ammotype_heatdam_dict[data['Category']]:
+                        ammotype_dam_AOE_best_dict[data['Category']] = 'Multiple'
+                  except KeyError:
+                     print('No AOE damage on ammo; Defaulting to 0.')
+
+                  try:
+                     if data['AOERange'] > ammotype_radius_AOE_dict[data['Category']]:
+                        ammotype_radius_AOE_dict[data['Category']] = data['AOERange']
+                  except KeyError:
+                     print('No AOE range on ammo; Defaulting to 0.')
+
             except KeyError:
                traceback.print_exc()
                print('No Category on ammo! Skipping.')
@@ -503,25 +544,29 @@ for item in weapon_file_list:
             current_row.append(ammotype_dam_best_dict[data['AmmoCategory']])         
 
          #Weapon AOE damage and range module
+         weapon_damage_AOE = 0
+         weapon_AOE_radius = 0 
          try:
-            if data['AOECapable'] == True:
+            if data['AOECapable']:
                print('Weapon has base AOE capability')
                weapon_damage_AOE = data['AOEDamage']
                weapon_AOE_radius = data['AOERange']
-               current_row.append(weapon_damage_AOE)
-               current_row.append(weapon_AOE_radius)
-            else:
-               weapon_damage_AOE = 0
-               weapon_AOE_radius = 0 
-               current_row.append(0)
-               current_row.append(0)
          except KeyError:
-            print('Weapon does not have base AOE capability; AOE could be through through modes or ammo though')
-            weapon_damage_AOE = 0
-            weapon_AOE_radius = 0
-            current_row.append(0)
-            current_row.append(0)
-
+            print('No AOE in base, checking for modes or ammo')
+            try:
+               for i in range(len(data['Modes'])):
+                  if data['Modes'][i]['AOECapable']:
+                     print('Weapon has AOE capability in Mode')
+                     weapon_damage_AOE = data['Modes'][i]['AOEDamage']
+                     weapon_AOE_radius = data['Modes'][i][AOERange]
+            except KeyError:
+               print('No AOE in modes either, checking for ammo')
+               if ammotype_dam_AOE_dict[data['AmmoCategory']] > 0:
+                  weapon_damage_AOE = ammotype_dam_AOE_dict[data['AmmoCategory']]
+                  weapon_AOE_radius = ammotype_radius_AOE_dict[data['AmmoCategory']]
+         current_row.append(weapon_damage_AOE)
+         current_row.append(weapon_AOE_radius)
+         
          #Damage variance module
          try:
             weapon_damage_variance = data['DamageVariance']
