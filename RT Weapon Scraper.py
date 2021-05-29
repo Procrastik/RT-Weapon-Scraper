@@ -477,12 +477,16 @@ for item in weapon_file_list:
          print("Base weapon damage ", weapon_base_damage)
          current_row.append(weapon_base_damage)
 
-         #Weapon most damaging ammotype damage value module
+         #Weapon most damaging ammotype damage value module     
          try:
-            current_row.append(ammotype_dam_dict[data['AmmoCategory']] * data['ShotsWhenFired'])
+            current_row.append(ammotype_dam_dict[data['AmmoCategory']] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']))
          except KeyError:
-            print('Weapon has no ammo')
-            current_row.append('N/A')
+            print('Weapon has no ammo, projectilespershot, shotswhenfired, or modes. Checking other options')
+            try:
+               current_row.append(ammotype_dam_dict[data['AmmoCategory']] * data['ShotsWhenFired'])
+            except KeyError:
+               print('Weapon probably has no ammo')
+               current_row.append('N/A')
 
          #Weapon most damaging ammotype module
          try:
@@ -619,21 +623,36 @@ for item in weapon_file_list:
                      print('No Stability damage key on this weapon!?')
                      current_row.append(0)
 
+         #Weapon heat damage multiplier module
+         try:
+            weapon_heat_multiplier = data['HeatMultiplier'] * data['Modes'][max_dam_mode]['HeatMultiplier']
+         except (KeyError, IndexError) as e:
+            print('No HeatMultiplier in modes or base, checking in modes only')
+            try:
+               weapon_heat_multiplier = data['Modes'][max_dam_mode]['HeatMultiplier']
+            except (KeyError, IndexError) as e:
+               print('No HeatMultipler in modes, checking in base')
+               try:
+                  weapon_heat_multiplier = data['HeatMultiplier']
+               except KeyError:
+                  print('No HeatMultiplier in base either, defaulting to 1')
+                  weapon_heat_multiplier = 1
+
          ##weapon heat damage module
          try:
-            weapon_heat_damage = (data['HeatDamage'] + data['Modes'][max_dam_mode]['HeatDamagePerShot']) * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])
+            weapon_heat_damage = (data['HeatDamage'] + data['Modes'][max_dam_mode]['HeatDamagePerShot']) * data['ProjectilesPerShot'] * weapon_heat_multiplier * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])
             print('Heat dam ' + str(weapon_heat_damage))
             current_row.append(weapon_heat_damage)
          except (KeyError, IndexError) as e:
             print('Either no HeatDamagePerShot in modes, no ShotsWhenFired in modes, or no modes, checking other possibilities in modes')
             try:
-               weapon_heat_damage = (data['HeatDamage'] + data['Modes'][max_dam_mode]['HeatDamagePerShot']) * data['ProjectilesPerShot'] * data['ShotsWhenFired']
+               weapon_heat_damage = (data['HeatDamage'] + data['Modes'][max_dam_mode]['HeatDamagePerShot']) * data['ProjectilesPerShot'] * data['ShotsWhenFired'] * weapon_heat_multiplier
                print('Heat dam ' + str(weapon_heat_damage))
                current_row.append(weapon_heat_damage)            
             except (KeyError, IndexError) as e:
                print('Either no HeatDamagePerShot in modes or no modes, checking other possibilities')                
                try:
-                  weapon_heat_damage = data['HeatDamage'] * data['ProjectilesPerShot'] * (data['ShotsWhenFired']) #heat damage = heat damage per shot * projectilespershot
+                  weapon_heat_damage = data['HeatDamage'] * weapon_heat_multiplier * data['ProjectilesPerShot'] * (data['ShotsWhenFired']) #heat damage = heat damage per shot * projectilespershot
                   print('Heat dam' + str(weapon_heat_damage))
                   current_row.append(weapon_heat_damage)
                except KeyError:
@@ -642,10 +661,14 @@ for item in weapon_file_list:
 
          #Weapon most heat damage ammotype damage value module
          try:
-            current_row.append(ammotype_heatdam_dict[data['AmmoCategory']] * data['ShotsWhenFired'])
+            current_row.append(ammotype_heatdam_dict[data['AmmoCategory']] * weapon_heat_multiplier * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']))
          except KeyError:
-            print('Weapon has no ammo')
-            current_row.append('N/A')
+            print('Weapon has no ammo, projectilespershot, shotswhenfired, or modes. Checking other options')
+            try:
+               current_row.append(ammotype_heatdam_dict[data['AmmoCategory']] * weapon_heat_multiplier * data['ProjectilesPerShot'] * data['ShotsWhenFired'])
+            except KeyError:
+               print('Weapon probably has no ammo')
+               current_row.append('N/A')
 
          #Weapon most heat damage ammotype module
          try:
