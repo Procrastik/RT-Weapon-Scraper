@@ -18,7 +18,7 @@ ams_file_list = []
 filtered_files = []
 excepted_files = []
 possible_invalid_jsons = []
-columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Clustering Capable (Weapon or with ammo)', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'Max Ammo Damage', 'Highest Direct Damage Ammo', 'AOE Damage', 'AOE Radius', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Ammo Heat Damage', 'Highest Direct Heat Damage Ammo', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
+columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Clustering Capable (Weapon or with ammo)', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'Max Bonus Ammo Damage', 'Highest Direct Damage Ammo', 'AOE Damage', 'AOE Radius', 'Highest Bonus AOE Ammo', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Ammo Heat Damage', 'Highest Direct Heat Damage Ammo', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
 ams_columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Tonnage', 'Slots', 'Multiple Activations Per Round', 'Base Damage Per Shot', 'Base Average Damage', 'Base Max Damage Per Activation', 'Base Shots Per Activation', 'Base Hit Chance', 'Base Heat Per Activation', 'Base Jam Chance', 'Base Max Range', 'Base Protect Allies', 'OL Damage Per Shot', 'OL Average Damage', 'OL Max Damage Per Activation', 'OL Shots Per Activation', 'OL Hit Chance', 'OL Heat Per Activation', 'OL Jam Chance', 'OL Max Range', 'OL Protect Allies', 'Full Power Damage Per Shot', 'Full Power Average Damage', 'Full Power Max Damage Per Activation', 'Full Power Shots Per Activation', 'Full Power Hit Chance', 'Full Power Heat Per Activation', 'Full Power Jam Chance', 'Full Power Max Range', 'Full Power Protect Allies']
 df = pandas.DataFrame(columns=columns_list)
 ams_df = pandas.DataFrame(columns=ams_columns_list)
@@ -68,38 +68,32 @@ for item in ammo_file_list:
         try: 
             data = json.load(f)
             try:
+               ammotype_dam_multiplier = 1.0
                if data['Category'] not in ammotype_dam_multi_dict.keys():#this if block handles building new keys in the dict for ammo types not already in the dict
                   print('New category, adding')
                   try:
-                     if data['DamageMultiplier'] > 1:
-                        ammotype_dam_multi_dict[data['Category']] = data['DamageMultiplier']
-                        ammotype_dam_multi_best_dict[data['Category']] = f.name
-                        print('Dam Multiplier', ammotype_dam_multi_dict[data['Category']])
-                     else:
-                        print('No DamageMultiplier on ammo; Defaulting to 1.')
-                        ammotype_dam_multi_dict[data['Category']] = 1
-                        ammotype_dam_multi_best_dict[data['Category']] = f.name
-                        print('Dam Multiplier', ammotype_dam_multi_dict[data['Category']])
+                     ammotype_dam_multiplier = data['DamageMultiplier']
+                     print('Dam Multiplier ', ammotype_dam_multiplier)
                   except KeyError:
                      print('No DamageMultiplier on ammo; Defaulting to 1.')
-                     ammotype_dam_multi_dict[data['Category']] = 1
-                     ammotype_dam_multi_best_dict[data['Category']] = f.name
-                     print('Dam Multiplier ', ammotype_dam_multi_dict[data['Category']])
 
                   try:
-                     if data['DamagePerShot'] > 0:
+                     if float(data['DamagePerShot']) * ammotype_dam_multiplier > 0:
                         ammotype_dam_dict[data['Category']] = data['DamagePerShot']
                         ammotype_dam_best_dict[data['Category']] = f.name
+                        ammotype_dam_multi_dict[data['Category']] = ammotype_dam_multiplier
                         print('Dampershot', ammotype_dam_dict[data['Category']])
                      else:
                         print('No DamagePerShot on ammo; Defaulting to 0.')
                         ammotype_dam_dict[data['Category']] = 0
                         ammotype_dam_best_dict[data['Category']] = f.name
-                        print('Dampershot ', ammotype_dam_multi_dict[data['Category']])
+                        ammotype_dam_multi_dict[data['Category']] = ammotype_dam_multiplier
+                        print('Dampershot ', ammotype_dam_dict[data['Category']])
                   except KeyError:
                      print('No DamagePerShot on ammo; Defaulting to 0.')
                      ammotype_dam_dict[data['Category']] = 0
                      ammotype_dam_best_dict[data['Category']] = f.name
+                     ammotype_dam_multi_dict[data['Category']] = ammotype_dam_multiplier
                      print('Dampershot ', ammotype_dam_dict[data['Category']])
 
                   try:
@@ -142,7 +136,7 @@ for item in ammo_file_list:
                   except KeyError:
                      print('No AOE damage on ammo; Defaulting to 0.')
                      ammotype_dam_AOE_dict[data['Category']] = 0
-                     ammotype_dam_AOE_best_dict[data['Category']] = f.name
+                     ammotype_dam_AOE_best_dict[data['Category']] = 'N/A'
 
                   try:
                      if data['AOERange'] > 0:
@@ -154,30 +148,29 @@ for item in ammo_file_list:
                elif data['Category'] in ammotype_dam_multi_dict.keys():#this block compares existing key values to the currently evaluated ammo type
                   print('Existing category, comparing')
                   try:
-                     if data['DamageMultiplier'] > ammotype_dam_multi_dict[data['Category']]:
-                        ammotype_dam_multi_dict[data['Category']] = data['DamageMultiplier']
-                        ammotype_dam_multi_best_dict[data['Category']] = f.name
-                        print('Dam ', ammotype_dam_multi_dict[data['Category']])
-                     elif data['DamageMultiplier'] == ammotype_dam_multi_dict[data['Category']]:
-                        ammotype_dam_multi_best_dict[data['Category']] = 'Multiple'
+                     ammotype_dam_multiplier = data['DamageMultiplier']
+                     print('Dam Multiplier ', ammotype_dam_multiplier)
                   except KeyError:
-                     print('No DamageMultiplier on ammo; Comparing to best in case they are the same')
-                     if ammotype_dam_multi_dict[data['Category']] == 1:
-                        ammotype_dam_multi_best_dict[data['Category']] = 'Multiple'
+                     print('No DamageMultiplier on ammo; Defaulting to 1.')
                   
                   try:
-                     if data['DamagePerShot'] > ammotype_dam_dict[data['Category']]:
+                     if float(data['DamagePerShot']) * ammotype_dam_multiplier > float(ammotype_dam_dict[data['Category']]) * ammotype_dam_multi_dict[data['Category']]:
                         ammotype_dam_dict[data['Category']] = data['DamagePerShot']
                         ammotype_dam_best_dict[data['Category']] = f.name
+                        ammotype_dam_multi_dict[data['Category']] = ammotype_dam_multiplier
                         print('Dam ', ammotype_dam_dict[data['Category']])
-                     elif data['DamagePerShot'] == ammotype_dam_dict[data['Category']]:
+                     elif float(data['DamagePerShot']) * ammotype_dam_multiplier == float(ammotype_dam_dict[data['Category']]) * ammotype_dam_multi_dict[data['Category']]:
                         print('Ammo DamagePerShot equal to existing best, setting best to multiple')
                         ammotype_dam_best_dict[data['Category']] = 'Multiple'
                   except KeyError:                     
                      print('No DamagePerShot on ammo; Comparing to best in case they are the same')
                      if ammotype_dam_dict[data['Category']] == 0:
-                        print('Ammo DamagePerShot equal to 0 or existing best, setting best to multiple')
-                        ammotype_dam_best_dict[data['Category']] = 'Multiple'
+                        if ammotype_dam_multi_dict[data['Category']] < ammotype_dam_multiplier:
+                           print('Ammo DamagePerShot equal to 0 or existing best but ammo multiplier is higher. Changing best ammo and multiplier.')
+                           ammotype_dam_best_dict[data['Category']] = f.name
+                           ammotype_dam_multi_dict[data['Category']] = ammotype_dam_multiplier
+                        elif ammotype_dam_multi_dict[data['Category']] == ammotype_dam_multiplier:
+                           ammotype_dam_best_dict[data['Category']] = 'Multiple'
 
                   try:
                      if data['HeatDamagePerShot'] > ammotype_heatdam_dict[data['Category']]:
@@ -203,7 +196,7 @@ for item in ammo_file_list:
                         ammotype_dam_AOE_dict[data['Category']] = data['AOEDamage']
                         ammotype_dam_AOE_best_dict[data['Category']] = f.name
                         print('AOE dam ', ammotype_dam_AOE_dict[data['Category']])
-                     elif data['DamagePerShot'] == ammotype_heatdam_dict[data['Category']]:
+                     elif data['AOEDamage'] == ammotype_dam_AOE_dict[data['Category']] and ammotype_dam_AOE_dict[data['Category']] != 0:
                         ammotype_dam_AOE_best_dict[data['Category']] = 'Multiple'
                   except KeyError:
                      print('No AOE damage on ammo; Defaulting to 0.')
@@ -546,26 +539,41 @@ for item in weapon_file_list:
          #Weapon AOE damage and range module
          weapon_damage_AOE = 0
          weapon_AOE_radius = 0 
-         try:
-            if data['AOECapable']:
-               print('Weapon has base AOE capability')
-               weapon_damage_AOE = data['AOEDamage']
-               weapon_AOE_radius = data['AOERange']
+         try:            
+            weapon_damage_AOE = (data['AOEDamage'] + ammotype_dam_AOE_dict[data['AmmoCategory']]) * data['ShotsWhenFired']
+            weapon_AOE_radius = data['AOERange']
          except KeyError:
             print('No AOE in base, checking for modes or ammo')
             try:
                for i in range(len(data['Modes'])):
                   if data['Modes'][i]['AOECapable']:
                      print('Weapon has AOE capability in Mode')
-                     weapon_damage_AOE = data['Modes'][i]['AOEDamage']
-                     weapon_AOE_radius = data['Modes'][i][AOERange]
+                     weapon_damage_AOE = (data['Modes'][i]['AOEDamage'] + ammotype_dam_AOE_dict[data['AmmoCategory']]) * data['Modes'][i]['ShotsWhenFired']
+                     weapon_AOE_radius = data['Modes'][i]['AOERange']
             except KeyError:
                print('No AOE in modes either, checking for ammo')
-               if ammotype_dam_AOE_dict[data['AmmoCategory']] > 0:
-                  weapon_damage_AOE = ammotype_dam_AOE_dict[data['AmmoCategory']]
-                  weapon_AOE_radius = ammotype_radius_AOE_dict[data['AmmoCategory']]
+               try:
+                  if ammotype_dam_AOE_dict[data['AmmoCategory']] > 0:
+                     weapon_damage_AOE = ammotype_dam_AOE_dict[data['AmmoCategory']] * data['ShotsWhenFired']
+                     weapon_AOE_radius = ammotype_radius_AOE_dict[data['AmmoCategory']]
+               except KeyError:
+                  weapon_damage_AOE = 0
+                  weapon_AOE_radius = 0                 
          current_row.append(weapon_damage_AOE)
          current_row.append(weapon_AOE_radius)
+
+         try:
+            pattern = '\w*.json'
+            match_var = re.search(pattern,ammotype_dam_AOE_best_dict[data['AmmoCategory']])
+            current_row.append(match_var.group()[:-5])
+            print('Best ammo is ' + match_var.group()[:-5])
+         except (KeyError, TypeError) as e:
+            traceback.print_exc()
+            current_row.append('N/A')
+            print('Weapon has no ammo category')
+         except AttributeError:
+            traceback.print_exc()
+            current_row.append(ammotype_dam_AOE_best_dict[data['AmmoCategory']])
          
          #Damage variance module
          try:
@@ -1624,7 +1632,7 @@ for item in ams_file_list:
       except json.decoder.JSONDecodeError:
          possible_invalid_jsons.append(item)
          print('Possible invalid JSON!')
-##End of the JSON.load() try statement from line 242
+##End of the JSON.load() try statement
       
 #These are used to write filenames of different types of excepted files to separate text files for analyzation later
 #For tracking all files filtered from exclusion list and other filter checks
