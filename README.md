@@ -43,7 +43,7 @@ _**Damage Variance**_ - The damage variance value (+ or -) of the weapon.
 
 _**Max Stability Damage**_ - The absolute maximum possible stability damage the weapon can do in its highest damaging mode (as this is likely always the most destabilizing mode as well). Does not account for ammo bonuses.
 
-_**Max Heat Damage**_ - The absolute maximum possible heat damage the weapon can do in its spiciest mode. Does not account for ammo bonuses.
+_**Max Heat Damage**_ - The absolute maximum possible heat damage the weapon can do in its spiciest mode or base including the best heat ammo in applicable.
 
 _**Max Ammo Heat Damage**_ - The direct heat damage value of the spiciest ammo type.
 
