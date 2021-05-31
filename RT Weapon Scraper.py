@@ -18,7 +18,7 @@ ams_file_list = []
 filtered_files = []
 excepted_files = []
 possible_invalid_jsons = []
-columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Clustering Capable (Weapon or with ammo)', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'Max Bonus Ammo Damage', 'Highest Direct Damage Ammo', 'AOE Damage', 'AOE Radius', 'Highest Bonus AOE Ammo', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Ammo Heat Damage', 'Highest Direct Heat Damage Ammo', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
+columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Clustering Capable (Weapon or with ammo)', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'Max Bonus Ammo Damage', 'Highest Direct Damage Ammo (Comparing Damage Bonus/Multiplier)', 'AOE Damage', 'AOE Radius', 'Highest Bonus AOE Ammo', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Ammo Heat Damage', 'Highest Direct Heat Damage Ammo', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
 ams_columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Tonnage', 'Slots', 'Multiple Activations Per Round', 'Base Damage Per Shot', 'Base Average Damage', 'Base Max Damage Per Activation', 'Base Shots Per Activation', 'Base Hit Chance', 'Base Heat Per Activation', 'Base Jam Chance', 'Base Max Range', 'Base Protect Allies', 'OL Damage Per Shot', 'OL Average Damage', 'OL Max Damage Per Activation', 'OL Shots Per Activation', 'OL Hit Chance', 'OL Heat Per Activation', 'OL Jam Chance', 'OL Max Range', 'OL Protect Allies', 'Full Power Damage Per Shot', 'Full Power Average Damage', 'Full Power Max Damage Per Activation', 'Full Power Shots Per Activation', 'Full Power Hit Chance', 'Full Power Heat Per Activation', 'Full Power Jam Chance', 'Full Power Max Range', 'Full Power Protect Allies']
 df = pandas.DataFrame(columns=columns_list)
 ams_df = pandas.DataFrame(columns=ams_columns_list)
@@ -361,6 +361,32 @@ for item in weapon_file_list:
          if weapon_damage2 > weapon_damage:#checks the max damage mode and the max shots mode loop max damage values against each other and sets the highest 
             weapon_damage = weapon_damage2
             max_dam_mode = max_shots_mode
+
+         #Weapon damage multiplier module - This is used on the result of the damage module to calculate max damage value and is effectively part of the damage module
+         try:
+            weapon_damage_multiplier = ammotype_dam_multi_dict[data['AmmoCategory']]
+            try:
+               weapon_damage_multiplier *= data['DamageMultiplier'] * data['Modes'][max_dam_mode]['DamageMultiplier']
+            except KeyError:
+               print('Damage multiplier on ammo but not on mode mode, checking only base and ammo')
+               try:
+                  weapon_damage_multiplier *= data['DamageMultiplier']
+               except KeyError:
+                  print('Damage multiplier only on ammo')
+         except KeyError:
+            print('No ammo key on this weapon, checking mode and base for damage multiplier')
+            try:
+               weapon_damage_multiplier = data['DamageMultiplier'] * data['Modes'][max_dam_mode]['DamageMultiplier']
+            except KeyError:
+               print('No damage multiplier in ammo or in modes, checking only base')
+               try:
+                  weapon_damage_multiplier = data['DamageMultiplier']
+               except KeyError:
+                  print('No damage multiplier, using 1 as default')
+                  weapon_damage_multiplier = 1
+         print('Base max weapon damage is ' ,weapon_damage)
+         weapon_damage *= weapon_damage_multiplier
+         print('Multiplier max weapon damage is ' ,weapon_damage)
          current_row.append(weapon_damage)
 
          #Indirectfire check module
@@ -678,18 +704,30 @@ for item in weapon_file_list:
 
          #Weapon heat damage multiplier module
          try:
-            weapon_heat_multiplier = data['HeatMultiplier'] * data['Modes'][max_dam_mode]['HeatMultiplier']
-         except (KeyError, IndexError) as e:
-            print('No HeatMultiplier in modes or base, checking in modes only')
+            weapon_heat_multiplier = ammotype_heatdam_dict[data['AmmoCategory']]
             try:
-               weapon_heat_multiplier = data['Modes'][max_dam_mode]['HeatMultiplier']
-            except (KeyError, IndexError) as e:
-               print('No HeatMultipler in modes, checking in base')
+               weapon_heat_multiplier *= data['HeatMultiplier'] * data['Modes'][max_dam_mode]['HeatMultiplier']
+            except KeyError:
+               print('Heat multiplier on ammo but not on mode mode, checking only base and ammo')
                try:
-                  weapon_heat_multiplier = data['HeatMultiplier']
+                  weapon_heat_multiplier *= data['HeatMultiplier']
                except KeyError:
-                  print('No HeatMultiplier in base either, defaulting to 1')
-                  weapon_heat_multiplier = 1
+                  print('Heat multiplier only on ammo')
+         except KeyError:
+            print('No ammo key on this weapon, checking mode and base for heat multiplier')
+            try:
+               weapon_heat_multiplier = data['HeatMultiplier'] * data['Modes'][max_dam_mode]['HeatMultiplier']
+            except (KeyError, IndexError) as e:
+               print('No HeatMultiplier in modes or base, checking in modes only')
+               try:
+                  weapon_heat_multiplier = data['Modes'][max_dam_mode]['HeatMultiplier']
+               except (KeyError, IndexError) as e:
+                  print('No HeatMultipler in modes, checking in base')
+                  try:
+                     weapon_heat_multiplier = data['HeatMultiplier']
+                  except KeyError:
+                     print('No HeatMultiplier in base either, defaulting to 1')
+                     weapon_heat_multiplier = 1
 
          ##weapon heat damage module
          try:
