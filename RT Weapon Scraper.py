@@ -1,6 +1,6 @@
-#OPTIMIZATION
-#Change for loop iterator for each file to check for modes at the start of the loop and set a variable has_modes, can call this for each check to save time/cycles
-#set a logging variable to enable full logging or no logging
+# OPTIMIZATION
+# Change for loop iterator for each file to check for modes at the start of the loop and set a variable has_modes, can call this for each check to save time/cycles
+# set a logging variable to enable full logging or no logging
 
 import os
 import json
@@ -8,17 +8,17 @@ import traceback
 import pandas
 import time
 import re
-time1 = time.time()#this is simply to test time efficiency
+time1 = time.time()# this is simply to test time efficiency
 
-#change location variable to point to root of install location you want to analyze.
+# change location variable to point to root of install location you want to analyze.
 location = 'D:\RogueTech Git\RogueTech'
-file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush','Infantry', 'deprecated', 'Nuke']#add anything you would like excluded here
+file_keyword_exclusion_list = ['Melee', 'Special', 'Turret', 'Ambush', 'Infantry', 'deprecated', 'Nuke']# add anything you would like excluded here
 weapon_file_list = []
 ams_file_list = []
 filtered_files = []
 excepted_files = []
 possible_invalid_jsons = []
-columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Clustering Capable (Weapon or with ammo)', 'Tonnage', 'Slots', 'Max Recoil', 'Base Damage', 'Max Damage', 'Max Bonus Ammo Damage', 'Highest Direct Damage Ammo (Comparing Damage Bonus/Multiplier)', 'AOE Damage', 'AOE Radius', 'Highest Bonus AOE Ammo', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Ammo Heat Damage', 'Highest Direct Heat Damage Ammo', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Minimum Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
+columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Indirectfire', 'Clustering Capable (Weapon or with ammo)', 'Tonnage', 'Slots', 'Max Recoil', 'Base Direct Damage', 'Max Direct Damage', 'Max Bonus Ammo Damage', 'Highest Direct Damage Ammo (Comparing Damage Bonus/Multiplier)', 'AOE Damage', 'AOE Radius', 'Highest Bonus AOE Ammo', 'Damage Variance', 'Max Stability Damage', 'Max Heat Damage', 'Max Ammo Heat Damage', 'Highest Direct Heat Damage Ammo', 'Max Firing Heat', 'Max Jam Chance', 'Can Misfire', 'Damage Per Heat', 'Damage Per Slot', 'Damage Per Ton', 'Weapon Crit Multiplier', 'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness', 'Base Accuracy Bonus', 'Base Evasion Ignore', 'Min Range', 'Short Range', 'Medium Range', 'Long Range', 'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage', 'Long Range Damage','Max Range Damage']
 ams_columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Tonnage', 'Slots', 'Multiple Activations Per Round', 'Base Damage Per Shot', 'Base Average Damage', 'Base Max Damage Per Activation', 'Base Shots Per Activation', 'Base Hit Chance', 'Base Heat Per Activation', 'Base Jam Chance', 'Base Max Range', 'Base Protect Allies', 'OL Damage Per Shot', 'OL Average Damage', 'OL Max Damage Per Activation', 'OL Shots Per Activation', 'OL Hit Chance', 'OL Heat Per Activation', 'OL Jam Chance', 'OL Max Range', 'OL Protect Allies', 'Full Power Damage Per Shot', 'Full Power Average Damage', 'Full Power Max Damage Per Activation', 'Full Power Shots Per Activation', 'Full Power Hit Chance', 'Full Power Heat Per Activation', 'Full Power Jam Chance', 'Full Power Max Range', 'Full Power Protect Allies']
 df = pandas.DataFrame(columns=columns_list)
 ams_df = pandas.DataFrame(columns=ams_columns_list)
@@ -57,7 +57,7 @@ for r, d, f in os.walk(location):
                   continue
             if not file_in_exclusion_list:
                ammo_file_list.append(os.path.join(r, item))
-               print('Passed ',item)            
+               print('Passed ',item)
 ##
 
 #this iterates through the identified list of files meeting search criteria, prints the filename and loads them with the json module so you can search them and finally checks if there is any loading errors and adds them to lists to help identify invalid JSONs or bad characters.
@@ -65,7 +65,7 @@ for r, d, f in os.walk(location):
 for item in ammo_file_list:
    with open(item) as f:
         print(item)
-        try: 
+        try:
             data = json.load(f)
             try:
                ammotype_dam_multiplier = 1.0
@@ -144,7 +144,7 @@ for item in ammo_file_list:
                   except KeyError:
                      print('No AOE range on ammo; Defaulting to 0.')
                      ammotype_radius_AOE_dict[data['Category']] = 0
-                  
+
                elif data['Category'] in ammotype_dam_multi_dict.keys():#this block compares existing key values to the currently evaluated ammo type
                   print('Existing category, comparing')
                   try:
@@ -152,7 +152,7 @@ for item in ammo_file_list:
                      print('Dam Multiplier ', ammotype_dam_multiplier)
                   except KeyError:
                      print('No DamageMultiplier on ammo; Defaulting to 1.')
-                  
+
                   try:
                      if float(data['DamagePerShot']) * ammotype_dam_multiplier > float(ammotype_dam_dict[data['Category']]) * ammotype_dam_multi_dict[data['Category']]:
                         ammotype_dam_dict[data['Category']] = data['DamagePerShot']
@@ -162,7 +162,7 @@ for item in ammo_file_list:
                      elif float(data['DamagePerShot']) * ammotype_dam_multiplier == float(ammotype_dam_dict[data['Category']]) * ammotype_dam_multi_dict[data['Category']]:
                         print('Ammo DamagePerShot equal to existing best, setting best to multiple')
                         ammotype_dam_best_dict[data['Category']] = 'Multiple'
-                  except KeyError:                     
+                  except KeyError:
                      print('No DamagePerShot on ammo; Comparing to best in case they are the same')
                      if ammotype_dam_dict[data['Category']] == 0:
                         if ammotype_dam_multi_dict[data['Category']] < ammotype_dam_multiplier:
@@ -241,7 +241,7 @@ for r, d, f in os.walk(location):
                   continue
             if not file_in_exclusion_list:
                weapon_file_list.append(os.path.join(r, item))
-               print('Passed ',item)            
+               print('Passed ',item)
 ##
 
 #This iterates through all of the 'location' path from top directory down looking for listed criteria in the for loop and adds it to list ams_file_list
@@ -266,17 +266,17 @@ for r, d, f in os.walk(location):
                      continue
                if not file_in_exclusion_list:
                   ams_file_list.append(os.path.join(r, item))
-                  print('Passed ',item)            
+                  print('Passed ',item)
 ##
 
 #this iterates through the identified list of files meeting search criteria, prints the filename and loads them with the json module so you can search them and finally checks if there is any loading errors and adds them to lists to help identify invalid JSONs or bad characters.
 for item in weapon_file_list:
    with open(item) as f:
       print(item)
-      try: 
+      try:
          data = json.load(f)
          current_row = []
-         
+
          #Weapon hardpoint module
          try:
             hardpoint_type = str(data['Category'])
@@ -298,7 +298,7 @@ for item in weapon_file_list:
          except KeyError:
             print('Missing Weapon Type')
             current_row.append('N/A')
-         
+
          #Weapon name module
          try:
             if 'deprecated' in str(data['Description']['UIName']).lower():
@@ -353,12 +353,12 @@ for item in weapon_file_list:
                      traceback.print_exc()
                except:
                   traceback.print_exc()
-                  print('No additional ShotsWhenFired found in modes, reverting to base')   
+                  print('No additional ShotsWhenFired found in modes, reverting to base')
          except KeyError: #removed indexerror as this should not throw one. This will catch errors when a weapon has no modes.
             print('No modes. Reverting to base values.')
             weapon_damage2 = data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired']) #damage = damage per shot * projectilespershot
          print('DMG Modes ' + str(weapon_damage),' Shots Modes ', str(weapon_damage2))
-         if weapon_damage2 > weapon_damage:#checks the max damage mode and the max shots mode loop max damage values against each other and sets the highest 
+         if weapon_damage2 > weapon_damage:#checks the max damage mode and the max shots mode loop max damage values against each other and sets the highest
             weapon_damage = weapon_damage2
             max_dam_mode = max_shots_mode
 
@@ -368,7 +368,7 @@ for item in weapon_file_list:
             try:
                weapon_damage_multiplier *= data['DamageMultiplier'] * data['Modes'][max_dam_mode]['DamageMultiplier']
             except KeyError:
-               print('Damage multiplier on ammo but not on mode mode, checking only base and ammo')
+               print('Damage multiplier on ammo but not on mode, checking only base and ammo')
                try:
                   weapon_damage_multiplier *= data['DamageMultiplier']
                except KeyError:
@@ -396,7 +396,7 @@ for item in weapon_file_list:
                   try:
                      if data['Modes'][i]['IndirectFireCapable'] == True:
                         indirect_fire = 'True'
-                        break                    
+                        break
                   except KeyError: #if no IndirectFireCapable in mode found
                         traceback.print_exc()
                         try:
@@ -448,7 +448,7 @@ for item in weapon_file_list:
             except KeyError:
                print('No wr-clustered_shots or Weapon Type, skipping')
          try:
-            if weapon_cluster == 'False': 
+            if weapon_cluster == 'False':
                for i in range(len(data['Modes'])): #for loop to iterate over the number of Modes found
                   print('Cluster check Mode ', i)
                   try:
@@ -464,7 +464,7 @@ for item in weapon_file_list:
                weapon_cluster = 'True in Ammo'
          except KeyError:
             print('No ammo clustering for this weapon')
-                            
+
          current_row.append(weapon_cluster)
 
          #Tonnage check module
@@ -523,7 +523,6 @@ for item in weapon_file_list:
                try:
                   if data['Modes'][i]['isBaseMode']:
                      weapon_base_damage = (data['Damage'] + data['Modes'][i]['DamagePerShot']) * data['ProjectilesPerShot'] * (data['ShotsWhenFired'] + data['Modes'][i]['ShotsWhenFired'])
-                     #would like to use break here but it doesn't exit the for loop??
                except KeyError: #if no DamagePerShot in mode found
                   print('No DamagePerShot in modes, checking for extra shots in mode')
                   try:
@@ -535,9 +534,10 @@ for item in weapon_file_list:
             print('No modes, reverting to base values')
             weapon_base_damage = data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired']) #damage = damage per shot * projectilespershot
          print("Base weapon damage ", weapon_base_damage)
+         weapon_base_damage *= weapon_damage_multiplier
          current_row.append(weapon_base_damage)
 
-         #Weapon most damaging ammotype damage value module     
+         #Weapon most damaging ammotype damage value module
          try:
             current_row.append(ammotype_dam_dict[data['AmmoCategory']] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']))
          except KeyError:
@@ -560,12 +560,12 @@ for item in weapon_file_list:
             print('Weapon has no ammo category')
          except AttributeError:
             traceback.print_exc()
-            current_row.append(ammotype_dam_best_dict[data['AmmoCategory']])         
+            current_row.append(ammotype_dam_best_dict[data['AmmoCategory']])
 
          #Weapon AOE damage and range module
          weapon_damage_AOE = 0
-         weapon_AOE_radius = 0 
-         try:            
+         weapon_AOE_radius = 0
+         try:
             weapon_damage_AOE = (data['AOEDamage'] + ammotype_dam_AOE_dict[data['AmmoCategory']]) * data['ShotsWhenFired']
             weapon_AOE_radius = data['AOERange']
          except KeyError:
@@ -584,7 +584,7 @@ for item in weapon_file_list:
                      weapon_AOE_radius = ammotype_radius_AOE_dict[data['AmmoCategory']]
                except KeyError:
                   weapon_damage_AOE = 0
-                  weapon_AOE_radius = 0                 
+                  weapon_AOE_radius = 0
          current_row.append(weapon_damage_AOE)
          current_row.append(weapon_AOE_radius)
 
@@ -600,7 +600,7 @@ for item in weapon_file_list:
          except AttributeError:
             traceback.print_exc()
             current_row.append(ammotype_dam_AOE_best_dict[data['AmmoCategory']])
-         
+
          #Damage variance module
          try:
             weapon_damage_variance = data['DamageVariance']
@@ -679,7 +679,7 @@ for item in weapon_file_list:
                            except KeyError:
                               print('No Stability damage key on this weapon!?')
                               current_row.append(0)
-            
+
          except KeyError: #if no ImprovedBallistic key found on weapon (Custom Bundle assumes true if not present)
             print('No ImprovedBallistic key found on weapon, defaulting to true')
             try:
@@ -739,9 +739,9 @@ for item in weapon_file_list:
             try:
                weapon_heat_damage = (data['HeatDamage'] + data['Modes'][max_dam_mode]['HeatDamagePerShot']) * data['ProjectilesPerShot'] * data['ShotsWhenFired'] * weapon_heat_multiplier
                print('Heat dam ' + str(weapon_heat_damage))
-               current_row.append(weapon_heat_damage)            
+               current_row.append(weapon_heat_damage)
             except (KeyError, IndexError) as e:
-               print('Either no HeatDamagePerShot in modes or no modes, checking other possibilities')                
+               print('Either no HeatDamagePerShot in modes or no modes, checking other possibilities')
                try:
                   weapon_heat_damage = data['HeatDamage'] * weapon_heat_multiplier * data['ProjectilesPerShot'] * (data['ShotsWhenFired']) #heat damage = heat damage per shot * projectilespershot
                   print('Heat dam' + str(weapon_heat_damage))
@@ -780,8 +780,8 @@ for item in weapon_file_list:
             if ammotype_heatdam_dict[data['AmmoCategory']] == 0:
                current_row.append('N/A')
                print('Weapon ammo has no heat damage variant')
-            else:   
-               current_row.append(ammotype_heatdam_best_dict[data['AmmoCategory']])   
+            else:
+               current_row.append(ammotype_heatdam_best_dict[data['AmmoCategory']])
 
          ##weapon firing heat module
          try:
@@ -803,7 +803,7 @@ for item in weapon_file_list:
             weapon_flat_jam = 0
             weapon_flat_jam = data['FlatJammingChance'] #FlatJammingChance is handled backwards to ShotsWhenFired. Most mode weapons don't have a base FlatJammingChance key and ONLY have them in the modes. Check for base FIRST then check for modes based on that.
             try:
-               weapon_flat_jam = (data['FlatJammingChance'] + data['Modes'][max_dam_mode]['FlatJammingChance'] * 100)  
+               weapon_flat_jam = (data['FlatJammingChance'] + data['Modes'][max_dam_mode]['FlatJammingChance'] * 100)
                print('Flat jamming chance ' + str(weapon_flat_jam))
             except (KeyError, IndexError) as e:
                weapon_flat_jam = (data['FlatJammingChance'] * 100)
@@ -832,7 +832,7 @@ for item in weapon_file_list:
          #weapon can misfire module
          try:
             weapon_misfire = 'False'
-            if data['DamageOnJamming']:               
+            if data['DamageOnJamming']:
                weapon_misfire = 'True'
             else:
                try:
@@ -850,7 +850,7 @@ for item in weapon_file_list:
             if 'wr-damage_when_jam' in data['ComponentTags']['items']:
                weapon_misfire = 'True'
          except KeyError:
-            print('No jamming on this weapon')                 
+            print('No jamming on this weapon')
          if weapon_misfire == 'False':
             try:
                for i in data['Custom']['BonusDescriptions']['Bonuses']:
@@ -862,7 +862,7 @@ for item in weapon_file_list:
 
          #damage compare modules
          try:
-            weapon_damage_per_heat = float("{:.2f}".format(float(weapon_damage + weapon_damage_AOE)/(float(weapon_firing_heat))))    
+            weapon_damage_per_heat = float("{:.2f}".format(float(weapon_damage + weapon_damage_AOE)/(float(weapon_firing_heat))))
             print(weapon_damage_per_heat)
             current_row.append(weapon_damage_per_heat)
          except ZeroDivisionError:
@@ -888,7 +888,6 @@ for item in weapon_file_list:
          #Standard crit module against location
          #In english (base crit from RTCore/GameConstants.json of 0.5 overwritten by AIM to 0.56)
 	      #0.56 * weapon crit chance * gear crit chance * ammo crit chance * target crit bonuses/penalties
-         #does NOT take into account 
          try:
             weapon_base_crit = (0.56 * data['CriticalChanceMultiplier']) * 100
             current_row.append(data['CriticalChanceMultiplier'])
@@ -971,13 +970,13 @@ for item in weapon_file_list:
             current_row.append(weapon_range_min)
          except KeyError:
             print('No minimum range on this weapon')
-         
+
          try:
             weapon_range_short = data['RangeSplit'][0]
             current_row.append(weapon_range_short)
          except KeyError:
             print('No short range on this weapon')
-         
+
          try:
             weapon_range_medium = data['RangeSplit'][1]
             current_row.append(weapon_range_medium)
@@ -994,7 +993,7 @@ for item in weapon_file_list:
             weapon_range_max = data['MaxRange']
             current_row.append(weapon_range_max)
          except KeyError:
-            print('No max range on this weapon')         
+            print('No max range on this weapon')
          print('Min ' + str(weapon_range_min)  + ' Short ' + str(weapon_range_short) + ' Medium ' + str(weapon_range_medium) + ' Long ' + str(weapon_range_long) + ' Max ' + str(weapon_range_max))
 
          #Damage variance field module
@@ -1009,7 +1008,7 @@ for item in weapon_file_list:
          range_list = [weapon_range_min, weapon_range_short, weapon_range_medium, weapon_range_long, weapon_range_max]
          range_falloff_ratio_list = [0,0,0,0,0]
          range_falloff_total_damage = [0,0,0,0,0]
-         try: 
+         try:
             if data['isDamageVariation']: #verify weapon uses damage variance
                try:
                   if data['DistantVarianceReversed'] == False:
@@ -1036,16 +1035,16 @@ for item in weapon_file_list:
                         j = 0
                         for i in range_list:
                            if (falloff_end - falloff_start > 1/1000):
-                              range_falloff_ratio_list[j] = ((i - falloff_start) / (falloff_end - falloff_start)) 
+                              range_falloff_ratio_list[j] = ((i - falloff_start) / (falloff_end - falloff_start))
                         ##DEFAULT
                            if i < falloff_start:
                               print('Range has no damage falloff')
                               current_row.append(weapon_damage)
-                           else: #DO THE THING                  
+                           else: #DO THE THING
                               current_row.append(float("{:.2f}".format(weapon_damage * (1.0 - range_falloff_ratio_list[j] * (1.0 - data['DistantVariance'])))))
                               print('Adding damage')
                            j += 1
-                  #reversed tree               
+                  #reversed tree
                   elif data['DistantVarianceReversed'] == True:
                      print('Reversed Distance Variance')
                      try:
@@ -1056,7 +1055,7 @@ for item in weapon_file_list:
                            falloff_start = weapon_range_min
                      except KeyError:
                         print('No falloff start distance key, using minimum value')
-                        falloff_start = weapon_range_min                     
+                        falloff_start = weapon_range_min
                      try:
                         if data['DamageFalloffEndDistance'] < falloff_start:
                            falloff_end = weapon_range_medium
@@ -1075,7 +1074,7 @@ for item in weapon_file_list:
                         if i < falloff_start:
                            print('Range has no damage falloff')
                            current_row.append(weapon_damage)
-                        else: #DO THE THING                  
+                        else: #DO THE THING
                            current_row.append(float("{:.2f}".format(weapon_damage * (data['DistantVariance'] + range_falloff_ratio_list[j] * (1.0 - data['DistantVariance'])))))
                            print('Adding reversed damage')
                         j += 1
@@ -1106,7 +1105,7 @@ for item in weapon_file_list:
 for item in ams_file_list:
    with open(item) as f:
       print(item)
-      try: 
+      try:
          data = json.load(f)
          current_row_ams = []
          #Initializing all loop variables in so any unused do not throw off row alignment by being empty
@@ -1156,7 +1155,7 @@ for item in ams_file_list:
          except KeyError:
             print('Missing Weapon Type')
             current_row_ams.append('N/A')
-         
+
          #AMS name module
          try:
             if 'deprecated' in str(data['Description']['UIName']).lower():
@@ -1204,7 +1203,7 @@ for item in ams_file_list:
             if data['AMSShootsEveryAttack']:
                current_row_ams.append('True')
             else:
-               current_row_ams.append('False')               
+               current_row_ams.append('False')
          except KeyError:
             current_row_ams.append('False')
 
@@ -1236,7 +1235,7 @@ for item in ams_file_list:
                   except KeyError:
                      try:
                         basemode_ams_damage = data['Modes'][i]['AMSDamage'] + 1
-                     except KeyError:                        
+                     except KeyError:
                         try:
                            print('No Mode AMS Damage, trying base')
                            basemode_ams_damage = data['AMSDamage'] + 1
@@ -1244,7 +1243,7 @@ for item in ams_file_list:
                         except KeyError:
                            print('No mode or base AMS Damage, defaulting to 1')
                            basemode_ams_damage = 1
-                  
+
                   basemode_ams_hitchance = 0
                   try:
                      basemode_ams_hitchance = data['Modes'][i]['AMSHitChance']
@@ -1276,7 +1275,7 @@ for item in ams_file_list:
                   except:
                      traceback.print_exc()
                      print('This should not be reachable! AMS avg damage error.')
-                  
+
                   basemode_ams_heat = 0
                   try:
                      basemode_ams_heat = data['Modes'][i]['HeatGenerated'] + data['HeatGenerated']
@@ -1305,7 +1304,7 @@ for item in ams_file_list:
                      except KeyError:
                         print('No jam chance on AMS, using zero')
 
-                  basemode_ams_maxrange = 0   
+                  basemode_ams_maxrange = 0
                   try:
                      basemode_ams_maxrange = data['MaxRange'] + data['Modes'][i]['MaxRange']
                      print('Basemode AMS max range is ', str(basemode_ams_maxrange))
@@ -1352,7 +1351,7 @@ for item in ams_file_list:
                         except KeyError:
                            print('No mode or base AMS Damage, defaulting to 1')
                            olmode_ams_damage = 1
-                  
+
                   olmode_ams_hitchance = 0
                   try:
                      olmode_ams_hitchance = data['Modes'][i]['AMSHitChance']
@@ -1384,7 +1383,7 @@ for item in ams_file_list:
                   except:
                      traceback.print_exc()
                      print('This should not be reachable! AMS avg damage error.')
-                  
+
                   olmode_ams_heat = 0
                   try:
                      olmode_ams_heat = data['Modes'][i]['HeatGenerated'] + data['HeatGenerated']
@@ -1413,7 +1412,7 @@ for item in ams_file_list:
                      except KeyError:
                         print('No jam chance on AMS, using zero')
 
-                  olmode_ams_maxrange = 0   
+                  olmode_ams_maxrange = 0
                   try:
                      olmode_ams_maxrange = data['MaxRange'] + data['Modes'][i]['MaxRange']
                      print('Overload AMS max range is ', str(olmode_ams_maxrange))
@@ -1452,7 +1451,7 @@ for item in ams_file_list:
                   except KeyError:
                      try:
                         fpmode_ams_damage = data['Modes'][i]['AMSDamage'] + 1
-                     except KeyError:  
+                     except KeyError:
                         try:
                            print('No Mode AMS Damage, trying base')
                            fpmode_ams_damage = data['AMSDamage'] + 1
@@ -1460,7 +1459,7 @@ for item in ams_file_list:
                         except KeyError:
                            print('No mode or base AMS Damage, defaulting to 1')
                            fpmode_ams_damage = 1
-                  
+
                   fpmode_ams_hitchance = 0
                   try:
                      fpmode_ams_hitchance = data['Modes'][i]['AMSHitChance']
@@ -1492,7 +1491,7 @@ for item in ams_file_list:
                   except:
                      traceback.print_exc()
                      print('This should not be reachable! AMS avg damage error.')
-                  
+
                   fpmode_ams_heat = 0
                   try:
                      fpmode_ams_heat = data['Modes'][i]['HeatGenerated'] + data['HeatGenerated']
@@ -1521,7 +1520,7 @@ for item in ams_file_list:
                      except KeyError:
                         print('No jam chance on AMS, using zero')
 
-                  fpmode_ams_maxrange = 0   
+                  fpmode_ams_maxrange = 0
                   try:
                      fpmode_ams_maxrange = data['MaxRange'] + data['Modes'][i]['MaxRange']
                      print('FullPower AMS max range is ', str(fpmode_ams_maxrange))
@@ -1563,7 +1562,7 @@ for item in ams_file_list:
             except KeyError:
                print('No mode or base AMS Damage, defaulting to 1')
                basemode_ams_damage = 1
-            
+
             basemode_ams_hitchance = 0
             try:
                basemode_ams_hitchance = data['AMSHitChance']
@@ -1585,7 +1584,7 @@ for item in ams_file_list:
             except:
                traceback.print_exc()
                print('This should not be reachable! AMS avg damage error.')
-            
+
             basemode_ams_heat = 0
             try:
                basemode_ams_heat = data['HeatGenerated']
@@ -1605,7 +1604,7 @@ for item in ams_file_list:
                print('Basemode AMS max range is ', str(basemode_ams_maxrange))
             except KeyError:
                print('No range on AMS, this thing is useless?')
-   
+
             basemode_aams = 'False'
             try:
                print(data['IsAAMS'])
@@ -1671,7 +1670,7 @@ for item in ams_file_list:
          possible_invalid_jsons.append(item)
          print('Possible invalid JSON!')
 ##End of the JSON.load() try statement
-      
+
 #These are used to write filenames of different types of excepted files to separate text files for analyzation later
 #For tracking all files filtered from exclusion list and other filter checks
 with open("filtered files.txt", "w") as output:
