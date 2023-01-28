@@ -1,13 +1,26 @@
 # RT-Analyzation
-Roguetech Tools
-
-This is a personal project to create my own tools for analyzation of files for the Harebrained Studios Battletech game mod RogueTech. At this time all tools are written in Python.
-
 **RT Weapon Scraper**
-The first tool is a weapon spreadsheetizer that pulls all weapons and pertinent data for them in the entire mod directory into a spreadsheet for comparisons.
+This tool is a weapon spreadsheetizer that pulls all weapons and pertinent data for them in the entire mod directory into a spreadsheet for comparisons.
 This tool also does JSON and Unicode verification. This tool is written with Python 3 and utilizes the libraries os, json, traceback, pandas, time, and re.
 
 The weapon scraper recursively checks the directory tree it is pointed at and returns a .xlsx spreadsheet with all found weapons minus any that are in its excluded list. It also returns separate files for possible invalid JSON files, possible Unicode or text compatibility errors, and a list of any excepted files that were skipped due to filtering.
+
+**How to use the tool**
+The recent GUI and onefile executable update has drastically simplified the process for using the tool. If you just want the spreadsheet I generally run it periodically and post the updated sheet in this repository but the crew changes things often so this could be out of date.
+
+Operating the tool is as simple as clicking the button in the middle of the window and selecting your RogueTech Mods folder. Once you have selected this folder a go button will appear at the bottom of the window that you can use to run the program. The logging checkbox is only used to peek under the hood or troubleshooting and is not recommended as it will turn a 4 second process into 500+ seconds.
+
+Once the program is run several files will be saved in the directory the program was run including the weapon spreadsheet. It will be badly formatted when it is initally saved so for convenience I do include a template spreadsheet you can use to copy formatting for the whole sheet using the format painter tool on the whole sheet.
+
+That's it, you are done and can sort and view stats of every weapon in the game. 
+
+To run the tool there are three options.
+
+**Run the Python file as is using your own IDE** - This will require that you also ensure you have a compatible version of Python 3, plus all the required dependencies.
+
+**The no console executable** - This is the most convenient option. The no console executable is a self-contained executable file that runs without opening a console window and without needing Python or any of its dependencies installed.
+
+**The standard console executable** - The console executable is also a self-contained executable file that runs without opening a console window and without needing Python or any of its dependencies installed. The difference being that it includes the standard console that will launch when the program is run. If you are interested in logging you would utilize this one but be advised that logging trashes the program's runtime.
 
 Currently the tool returns a large list of metrics about each weapon and AMS System:
 
