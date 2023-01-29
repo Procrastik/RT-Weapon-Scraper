@@ -107,3 +107,5 @@ _**Medium Range Damage**_ - Damage expected at medium range including falloff in
 _**Long Range Damage**_ - Damage expected at long range including falloff in applicable.
 
 _**Max Range Damage**_ - Damage expected at max range including falloff in applicable.
+
+_**AMS Sheet**_ - The separate AMS sheet is a work in progress again due to HHR changes made to modes. I have not validated their data since the update but base mode data should be accurate, modes info is broken though. Will fix this at a later time.
