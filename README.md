@@ -20,7 +20,7 @@ To run the tool there are three options.
 
 **The no console executable** - This is the most convenient option. The no console executable is a self-contained executable file that runs without opening a console window and without needing Python or any of its dependencies installed.
 
-**The standard console executable** - The console executable is also a self-contained executable file that runs without opening a console window and without needing Python or any of its dependencies installed. The difference being that it includes the standard console that will launch when the program is run. If you are interested in logging you would utilize this one but be advised that logging trashes the program's runtime.
+**The standard console executable** - The console executable is also a self-contained executable file that runs with a console window and without needing Python or any of its dependencies installed. The difference being that it includes the standard console that will launch when the program is run. If you are interested in logging you would utilize this one but be advised that logging trashes the program's runtime.
 
 Currently the tool returns a large list of metrics about each weapon and AMS System:
 
