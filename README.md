@@ -48,9 +48,9 @@ _**Max Ammo Damage**_ - The direct damage value (not including AOE) of the most 
 
 _**Highest Direct Damage Ammo**_ - The name of the highest direct damaging ammo. This checks for ammo damagepershot as well as damagemultiplier.
 
-_**AOE Damage**_ - AOE damage provided by the weapon and its most damaging AOE ammo.
+_**AOE Damage**_ - AOE damage provided by the weapon and its most damaging AOE ammo. This also captures TAG weapons that have a deferredEffect such as TAG Arrow IV. Does not account for AOE falloff as you get farther from the impact point.
 
-_**AOE Radius**_ - Radius in meters from impact that AOE Damage will impact including ammo.
+_**AOE Radius**_ - Radius in meters from impact that AOE Damage will impact including ammo. This also captures TAG weapons that have a deferredEffect such as TAG Arrow IV.
 
 _**Damage Variance**_ - The damage variance value (+ or -) of the weapon.
 
