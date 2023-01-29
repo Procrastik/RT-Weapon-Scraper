@@ -108,4 +108,6 @@ _**Long Range Damage**_ - Damage expected at long range including falloff in app
 
 _**Max Range Damage**_ - Damage expected at max range including falloff in applicable.
 
+_**Weapon AAA Factor %**_ - Percentage bonus to mech AAA factor provided by this weapon. I do not know know much about this mechanic so can't say how this interacts with the AAA factor beyond the bonus.
+
 _**AMS Sheet**_ - The separate AMS sheet is a work in progress again due to HHR changes made to modes. I have not validated their data since the update but base mode data should be accurate, modes info is broken though. Will fix this at a later time.
