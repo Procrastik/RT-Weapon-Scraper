@@ -40,9 +40,9 @@ _**Slots**_ - Critical slots taken by the weapon, this does not include ammo slo
 
 _**Max Recoil**_ - The recoil value the weapon has in its highest damaging mode. I chose to focus on the maximum damaging mode for this check if applicable so on super odd weapons this may not always be the highest recoil possible on the weapon.
 
-_**Base Damage**_ - The base direct damage of the weapon in its default mode. This is mostly to help compare weapons that have nearly unusable max damage modes due to incredible misfire/jam rates or other detrimental effects. Does not account for ammo bonuses.
+_**Base Direct Damage**_ - The base direct damage of the weapon in its default mode. This is mostly to help compare weapons that have nearly unusable max damage modes due to incredible misfire/jam rates or other detrimental effects. Does not account for ammo bonuses.
 
-_**Max Damage**_ - Dakka Dakka. The absolute maximum possible direct damage the weapon can do in its highest damaging mode using its most damaging ammotype.
+_**Max Direct Damage**_ - Dakka Dakka. The absolute maximum possible direct damage the weapon can do in its highest damaging mode using its most damaging ammotype.
 
 _**Max Ammo Damage**_ - The direct damage value (not including AOE) of the most damaging ammo type if applicable. This checks for ammo damagepershot as well as damagemultiplier.
 
