@@ -10,7 +10,7 @@ The recent GUI and onefile executable update has drastically simplified the proc
 
 Operating the tool is as simple as clicking the button in the middle of the window and selecting your RogueTech Mods folder. Once you have selected this folder a go button will appear at the bottom of the window that you can use to run the program. The logging checkbox is only used to peek under the hood or troubleshooting and is not recommended as it will turn a 4 second process into 500+ seconds.
 
-Once the program is run several files will be saved in the directory the program was run including the weapon spreadsheet. It will be badly formatted when it is initally saved so for convenience I do include a template spreadsheet you can use to copy formatting for the whole sheet using the format painter tool on the whole sheet.
+Once the program is run several files will be saved in the directory the program was run including the weapon spreadsheet. It will be badly formatted when it is initally saved so for convenience I do include a template spreadsheet you can use to copy formatting for the whole sheet using the format painter tool.
 
 That's it, you are done and can sort and view stats of every weapon in the game. 
 
