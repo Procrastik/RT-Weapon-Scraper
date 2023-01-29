@@ -107,7 +107,7 @@ def get_to_work():
                     'Weapon Base Crit Chance', 'Weapon TAC Chance (50% Max Thickness)', 'Max TAC Armor Thickness',
                     'Base Accuracy Bonus', 'Base Evasion Ignore', 'Min Range', 'Short Range', 'Medium Range', 'Long Range',
                     'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage',
-                    'Long Range Damage', 'Max Range Damage']
+                    'Long Range Damage', 'Max Range Damage', 'Weapon AAA Factor %']
     ams_columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Tonnage', 'Slots',
                         'Multiple Activations Per Round', 'Base Damage Per Shot', 'Base Average Damage',
                         'Base Max Damage Per Activation', 'Base Shots Per Activation', 'Base Hit Chance',
@@ -1476,7 +1476,20 @@ def get_to_work():
                     for i in range(5):
                         current_row.append(weapon_damage)
 
-                # l.insert(newindex, l.pop(oldindex))
+                # AA Factor Module
+                weapon_AAA_factor = 0.0
+                try:
+                    for i in data['statusEffects']:
+                        for j in i:
+                            if 'statisticData' in j:
+                                if i[j]['statName'] == 'AAAFactor':
+                                    weapon_AAA_factor = float(i[j]['modValue']) * 100
+                except:
+                    if logging:
+                        print('No statusEffects?')
+                current_row.append(weapon_AAA_factor)
+
+
                 current_row.insert(9, current_row.pop(3))  #TODO this rearranges the current_row list to properly format it for the excel sheet; this should go bye bye in next version, just use variables and append them all at the end man!
 
                 df2 = pandas.DataFrame([current_row], columns=columns_list)
