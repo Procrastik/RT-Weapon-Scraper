@@ -82,9 +82,9 @@ _**Weapon TAC Chance (50% Max Thickness)**_ - The Through Armor Critical chance 
 
 _**Max TAC Armor Thickness**_ - The maximum target armor location thickness that a TAC is possible at with this weapon.
 
-_**Base Accuracy Bonus**_ - Bonus or malus to accuracy on this weapon. At present this does not check in modes or ammo because it gets complicated with some weapons.
+_**Base Accuracy Bonus**_ - Bonus or malus to accuracy on this weapon, negative means better accuracy. At present this does not check in modes or ammo because it gets complicated with some weapons.
 
-_**Base Evasion Ignore**_ - Bonus evasion ignore provided by the weapon. At present this does not check in modes or ammo because it gets complicated with some weapons.
+_**Base Evasion Ignore**_ - Bonus evasion ignore provided by the weapon, positive is better. At present this does not check in modes or ammo because it gets complicated with some weapons.
 
 _**Minimum Range**_ - The minimum range of the weapon. Does not account for mode or ammo range changes.
 
