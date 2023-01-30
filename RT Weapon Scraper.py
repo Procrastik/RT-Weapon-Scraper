@@ -109,15 +109,9 @@ def get_to_work():
                     'Max Range', 'Damage Falloff %', 'Min Range Damage', 'Short Range Damage', 'Medium Range Damage',
                     'Long Range Damage', 'Max Range Damage', 'Weapon AAA Factor %']
     ams_columns_list = ['Hardpoint Type', 'Weapon Class', 'Weapon Name', 'Tonnage', 'Slots',
-                        'Multiple Activations Per Round', 'Base Damage Per Shot', 'Base Average Damage',
+                        'Activations Per Round', 'Base Damage Per Shot', 'Base Average Damage',
                         'Base Max Damage Per Activation', 'Base Shots Per Activation', 'Base Hit Chance',
-                        'Base Heat Per Activation', 'Base Jam Chance', 'Base Max Range', 'Base Protect Allies',
-                        'OL Damage Per Shot', 'OL Average Damage', 'OL Max Damage Per Activation',
-                        'OL Shots Per Activation', 'OL Hit Chance', 'OL Heat Per Activation', 'OL Jam Chance',
-                        'OL Max Range', 'OL Protect Allies', 'Full Power Damage Per Shot', 'Full Power Average Damage',
-                        'Full Power Max Damage Per Activation', 'Full Power Shots Per Activation', 'Full Power Hit Chance',
-                        'Full Power Heat Per Activation', 'Full Power Jam Chance', 'Full Power Max Range',
-                        'Full Power Protect Allies']
+                        'Base Heat Per Activation', 'Base Jam Chance', 'Base Max Range', 'Base Protect Allies']
     df = pandas.DataFrame(columns=columns_list)
     ams_df = pandas.DataFrame(columns=ams_columns_list)
     ##
@@ -631,14 +625,10 @@ def get_to_work():
                     try:
                         if 'wr-clustered_shots' in data['ComponentTags']['items']:
                             weapon_cluster = 'True'
-                        elif data['Type'] == 'LRM': # TODO: end statement here as true, the following extra checks are unnecessary because both paths lead to True?
-                            try:
-                                if data['HitGenerator'] == 'Cluster':
-                                    weapon_cluster = 'True'
-                            except KeyError:
-                                if logging:
-                                    print('Weapon is LRM and has no other HitGenerators, it does cluster.')
-                                weapon_cluster = 'True'
+                        elif data['Type'] == 'LRM':
+                            if logging:
+                                print('Weapon is LRM and has no other HitGenerators, it does cluster.')
+                            weapon_cluster = 'True'
                     except KeyError:
                         if logging:
                             print('No wr-clustered_shots or Weapon Type, skipping')
@@ -1522,22 +1512,6 @@ def get_to_work():
                 basemode_ams_jam = 'N/A'
                 basemode_ams_maxrange = 'N/A'
                 basemode_aams = 'N/A'
-                olmode_ams_damage = 'N/A'
-                olmode_ams_hitchance = 'N/A'
-                olmode_ams_shots = 'N/A'
-                olmode_ams_avg_damage = 'N/A'
-                olmode_ams_heat = 'N/A'
-                olmode_ams_jam = 'N/A'
-                olmode_ams_maxrange = 'N/A'
-                olmode_aams = 'N/A'
-                fpmode_ams_damage = 'N/A'
-                fpmode_ams_hitchance = 'N/A'
-                fpmode_ams_shots = 'N/A'
-                fpmode_ams_avg_damage = 'N/A'
-                fpmode_ams_heat = 'N/A'
-                fpmode_ams_jam = 'N/A'
-                fpmode_ams_maxrange = 'N/A'
-                fpmode_aams = 'N/A'
 
                 # AMS hardpoint module
                 try:
@@ -1624,15 +1598,15 @@ def get_to_work():
                     current_row_ams.append('N/A')
 
                 # AMS multi attack module
+                ams_multi_attack = 1
                 try:
-                    if data['AMSShootsEveryAttack']:
-                        current_row_ams.append('True')
-                    else:
-                        current_row_ams.append('False')
+                    ams_multi_attack = data['AMSActivationsPerTurn']
                 except KeyError:
-                    current_row_ams.append('False')
+                    print('No ActivationsPerTurn on AMS, defaulting to 1')
+                current_row_ams.append(ams_multi_attack)
 
                 # AMS modes everything module
+                # TODO clean this module up, OL and FP modes no longer exist and these check loops can be tossed
                 try:
                     for i in range(len(data['Modes'])):
                         if logging:
@@ -1642,7 +1616,7 @@ def get_to_work():
                             if data['Modes'][i]['IsAMS'] or data['IsAMS']:
                                 if logging:
                                     print('This mode or base is isAMS')
-                                is_AMS = 'True'
+                                is_AMS = True
                         except KeyError:
                             if logging:
                                 print('Missing isAMS key in either modes or base, checking base now')
@@ -1650,7 +1624,7 @@ def get_to_work():
                                 if data['IsAMS']:
                                     if logging:
                                         print('Base isAMS')
-                                    is_AMS = 'True'
+                                    is_AMS = True
                             except KeyError:
                                 if logging:
                                     print('Missing isAMS key in both modes and base; either this is not an AMS or this mode is not an AMS')
@@ -1758,7 +1732,6 @@ def get_to_work():
                                     if logging:
                                         print('No jam chance on AMS, using zero')
 
-                            basemode_ams_maxrange = 0
                             try:
                                 basemode_ams_maxrange = data['MaxRange'] + data['Modes'][i]['MaxRange']
                                 if logging:
@@ -2089,7 +2062,7 @@ def get_to_work():
                     if logging:
                         print('AMS has no modes, trying base values')
                         traceback.print_exc()
-                    basemode_ams_damage = 0
+
                     try:
                         if logging:
                             print('No Mode AMS Damage, trying base')
@@ -2154,7 +2127,6 @@ def get_to_work():
                         if logging:
                             print('No range on AMS, this thing is useless?')
 
-                    basemode_aams = 'False'
                     try:
                         if logging:
                             print(data['IsAAMS'])
@@ -2184,34 +2156,7 @@ def get_to_work():
                 current_row_ams.append(basemode_ams_jam)
                 current_row_ams.append(basemode_ams_maxrange)
                 current_row_ams.append(basemode_aams)
-                current_row_ams.append(olmode_ams_damage)
-                current_row_ams.append(olmode_ams_avg_damage)
-                try:
-                    current_row_ams.append(olmode_ams_damage * olmode_ams_shots)
-                except TypeError:
-                    current_row_ams.append('N/A')
-                current_row_ams.append(olmode_ams_shots)
-                current_row_ams.append(olmode_ams_hitchance)
-                current_row_ams.append(olmode_ams_heat)
-                current_row_ams.append(olmode_ams_jam)
-                current_row_ams.append(olmode_ams_maxrange)
-                current_row_ams.append(olmode_aams)
-                current_row_ams.append(fpmode_ams_damage)
-                current_row_ams.append(fpmode_ams_avg_damage)
-                try:
-                    current_row_ams.append(fpmode_ams_damage * fpmode_ams_shots)
-                except TypeError:
-                    current_row_ams.append('N/A')
-                current_row_ams.append(fpmode_ams_shots)
-                current_row_ams.append(fpmode_ams_hitchance)
-                current_row_ams.append(fpmode_ams_heat)
-                current_row_ams.append(fpmode_ams_jam)
-                current_row_ams.append(fpmode_ams_maxrange)
-                current_row_ams.append(fpmode_aams)
 
-                if len(current_row_ams) < 33:
-                    for i in range(33 - len(current_row_ams)):
-                        current_row_ams.append('???')
                 if logging:
                     print(current_row_ams)
                 ams_df2 = pandas.DataFrame([current_row_ams], columns=ams_columns_list)
