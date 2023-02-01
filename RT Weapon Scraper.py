@@ -166,6 +166,8 @@ def get_to_work():
             try:
                 data = json.load(f)
                 try:
+                    ammotype_ShotsWhenFired = 1
+                    ammotype_ProjectilesWhenFired = 1
                     ammotype_dam_multiplier = 1.0
                     if data['Category'] not in ammotype_dam_multi_dict.keys():  # This if block handles building new keys in the dict for ammo types not already in the dict
                         if logging:
@@ -179,12 +181,30 @@ def get_to_work():
                                 print('No DamageMultiplier on ammo; Defaulting to 1.')
 
                         try:
-                            if float(data['DamagePerShot']) * ammotype_dam_multiplier > 0:
-                                ammotype_dam_dict[data['Category']] = data['DamagePerShot']
+                            if data['ShotsWhenFired'] > 1:
+                                ammotype_ShotsWhenFired = data['ShotsWhenFired']
+                            if logging:
+                                print('Ammo ShotsWhenFired ', ammotype_ShotsWhenFired)
+                        except KeyError:
+                            if logging:
+                                print('No ShotsWhenFired on ammo; Defaulting to 1.')
+
+                        try:
+                            if data['ProjectilesPerShot'] > 1:
+                                ammotype_ProjectilesWhenFired = data['ProjectilesPerShot']
+                            if logging:
+                                print('Ammo ProjectilesPerShot ', ammotype_ProjectilesWhenFired)
+                        except KeyError:
+                            if logging:
+                                print('No ProjectilesPerShot on ammo; Defaulting to 1.')
+
+                        try:
+                            if float(data['DamagePerShot']) * ammotype_dam_multiplier * ammotype_ShotsWhenFired * ammotype_ProjectilesWhenFired > 0:
+                                ammotype_dam_dict[data['Category']] = data['DamagePerShot'] * ammotype_ShotsWhenFired * ammotype_ProjectilesWhenFired
                                 ammotype_dam_best_dict[data['Category']] = f.name
                                 ammotype_dam_multi_dict[data['Category']] = ammotype_dam_multiplier
                                 if logging:
-                                    print('Dampershot', ammotype_dam_dict[data['Category']])
+                                    print('Ammo salvo damage ', ammotype_dam_dict[data['Category']])
                             else:
                                 if logging:
                                     print('No DamagePerShot on ammo; Defaulting to 0.')
@@ -202,7 +222,7 @@ def get_to_work():
                             if logging:
                                 print('Dampershot ', ammotype_dam_dict[data['Category']])
 
-                        try:
+                        try: # TODO check this
                             if data['HeatDamagePerShot'] > 0:
                                 ammotype_heatdam_dict[data['Category']] = data['HeatDamagePerShot']
                                 ammotype_heatdam_best_dict[data['Category']] = f.name
@@ -264,8 +284,7 @@ def get_to_work():
                                 print('No AOE range on ammo; Defaulting to 0.')
                             ammotype_radius_AOE_dict[data['Category']] = 0
 
-                    elif data[
-                        'Category'] in ammotype_dam_multi_dict.keys():  # This block compares existing key values to the currently evaluated ammo type
+                    elif data['Category'] in ammotype_dam_multi_dict.keys():  # This block compares existing key values to the currently evaluated ammo type
                         if logging:
                             print('Existing category, comparing')
                         try:
@@ -300,7 +319,7 @@ def get_to_work():
                                 elif ammotype_dam_multi_dict[data['Category']] == ammotype_dam_multiplier:
                                     ammotype_dam_best_dict[data['Category']] = 'Multiple'
 
-                        try:
+                        try: # TODO and check this
                             if data['HeatDamagePerShot'] > ammotype_heatdam_dict[data['Category']]:
                                 ammotype_heatdam_dict[data['Category']] = data['HeatDamagePerShot']
                                 ammotype_heatdam_best_dict[data['Category']] = f.name
@@ -329,8 +348,7 @@ def get_to_work():
                                 ammotype_dam_AOE_best_dict[data['Category']] = f.name
                                 if logging:
                                     print('AOE dam ', ammotype_dam_AOE_dict[data['Category']])
-                            elif data['AOEDamage'] == ammotype_dam_AOE_dict[data['Category']] and ammotype_dam_AOE_dict[
-                                data['Category']] != 0:
+                            elif data['AOEDamage'] == ammotype_dam_AOE_dict[data['Category']] and ammotype_dam_AOE_dict[data['Category']] != 0:
                                 ammotype_dam_AOE_best_dict[data['Category']] = 'Multiple'
                         except KeyError:
                             if logging:
@@ -780,20 +798,49 @@ def get_to_work():
 
                 # Weapon most damaging ammotype damage value module
                 try:
-                    current_row.append(ammotype_dam_dict[data['AmmoCategory']] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']))
+                    if ammotype_dam_dict[data['AmmoCategory']] == 0:
+                        if logging:
+                            print('Weapon ammo adds no bonus damage')
+                        current_row.append(0)
+                    else:
+                        try:
+                            current_row.append(ammotype_dam_dict[data['AmmoCategory']] * (
+                                        data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']))
+                            if logging:
+                                print('Combined ammo salvo value is ', ammotype_dam_dict[data['AmmoCategory']] * (
+                                            data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']))
+                        except KeyError:
+                            if logging:
+                                print('Weapon has no one of ammo, shotswhenfired, or modes. Checking other options')
+                            try:
+                                if data['ShotsWhenFired'] == 0:
+                                    current_row.append(ammotype_dam_dict[data['AmmoCategory']])
+                                    if logging:
+                                        print('Weapon has no modes but combined ammo salvo value is ',
+                                              ammotype_dam_dict[data['AmmoCategory']])
+                                else:
+                                    current_row.append(ammotype_dam_dict[data['AmmoCategory']] * data['ShotsWhenFired'])
+                                    if logging:
+                                        print('Weapon has no modes but combined ammo salvo value is ',
+                                              ammotype_dam_dict[data['AmmoCategory']] * data['ShotsWhenFired'])
+                            except KeyError:
+                                try:
+                                    current_row.append(ammotype_dam_dict[data['AmmoCategory']])
+                                    if logging:
+                                        print('Weapon has no modes or shots but combined ammo salvo value is ',
+                                              ammotype_dam_dict[data['AmmoCategory']])
+                                except KeyError:
+                                    current_row.append(0)
+                                    if logging:
+                                        print('Weapon has no damage on ammo')
                 except KeyError:
                     if logging:
-                        print('Weapon has no ammo, projectilespershot, shotswhenfired, or modes. Checking other options')
-                    try:
-                        current_row.append(ammotype_dam_dict[data['AmmoCategory']] * data['ShotsWhenFired'])
-                    except KeyError:
-                        if logging:
-                            print('Weapon probably has no ammo')
-                        current_row.append('N/A')
-                except IndexError:
-                    if logging:
-                        print('Weapon is likely a LAM/VTOL wingmount with its own ammo')
+                        print('Weapon has no ammo')
                     current_row.append('N/A')
+                except IndexError:
+                    current_row.append('N/A')
+                    if logging:
+                        print('Something weird is going on with this weapon or ammo')
 
                 # Weapon most damaging ammotype module
                 try:
@@ -1130,7 +1177,10 @@ def get_to_work():
                 # Weapon jamming chance module
                 try:
                     weapon_flat_jam = 0
-                    weapon_flat_jam = data['FlatJammingChance']  # FlatJammingChance is handled backwards to ShotsWhenFired. Most mode weapons don't have a base FlatJammingChance key and ONLY have them in the modes. Check for base FIRST then check for modes based on that.
+                    weapon_flat_jam = data['FlatJammingChance']
+                    # FlatJammingChance is handled backwards to ShotsWhenFired. Most mode weapons don't have a
+                    # base FlatJammingChance key and ONLY have them in the modes.
+                    # Check for base FIRST then check for modes based on that.
                     try:
                         weapon_flat_jam = (data['FlatJammingChance'] + data['Modes'][max_dam_mode]['FlatJammingChance'] * 100)
                         if logging:
@@ -1233,12 +1283,27 @@ def get_to_work():
                     current_row.append(0)
 
                 # Standard crit module against location
-                # In english (base crit from RTCore/GameConstants.json of 0.5 overwritten by AIM to 0.56)
-                # 0.56 * weapon crit chance * gear crit chance * ammo crit chance * target crit bonuses/penalties
+                # CritChanceMin crit from Core\GameConstants.json of 0.5 overwritten by Core\CustomAmmoCategories\AIM_settings.json to 0.56
+                # (Crit chance minimum is 0.56) outside of this it can go higher depending on remaining structure left in the location hit.
+                # CritChanceVar = CritChanceZeroStructure - CritChanceFullStructure or (CritChanceVar = 0.7 - -0.15) (CritChanceVar = 0.85)
+                # CritChanceBase = CritChanceFullStructure or (CritChanceBase = -0.15)
+                # Now that we have all the basic variables, here is how it is applied.
+                # CritChance = CritChanceBase += 1.0 - currentStructure of target / maxStructure of target * CritChanceVar or (-0.15 += (1.0 - currentStructure of target / maxStructure of target * 0.85)) * Crit multiplier
+                # Example with an average medium mech CT at 50% structure in location hit
+                # CritChance = -0.15 + (1.0 - 40 / 80 * 0.85)
+                # This would equal 0.42499999999999993 but since our minimum crit chance is 0.56 it would be overridden.
+                # As structure remaining goes down your crit chance goes up, with a value of 10 structure remaining you would have 0.74375
                 try:
-                    weapon_base_crit = (0.56 * data['CriticalChanceMultiplier']) * 100
+                    weapon_base_crit = -0.15 + (1.0 - 0.5) * 0.85
+                    # This is kinda unnecessary right now since I am only calculating based on half the structure remaining which will always work out to under the minimum and need to be boosted to meet minimum.
+                    # In the future I may use the different structure % values, so I will leave it as is.
+                    # TODO future include fields for different values of remaining structure?
+                    if weapon_base_crit < 0.56:
+                        weapon_base_crit = 0.56
+                    weapon_final_crit = weapon_base_crit * data['CriticalChanceMultiplier']
+                    weapon_final_crit = weapon_final_crit * 100
                     current_row.append(data['CriticalChanceMultiplier'])
-                    current_row.append(weapon_base_crit)
+                    current_row.append(weapon_final_crit)
                 except KeyError:
                     if logging:
                         print('No CriticalChanceMultiplier on this weapon')
@@ -1251,11 +1316,18 @@ def get_to_work():
                 # APThicknessMod = (1.0 - half APMaxArmorThickness/weapon APMaxArmorThickness) This will always be 0.5!
                 # weapon ap crit mod = weapon.APCriticalChanceMultiplier (if weapon.APCriticalChanceMultiplier = 0, weapon ap crit mod set to 1.0)
                 # final TAC chance = basic crit chance (0.1) * APShardsMod * APThicknessMod * weapon ap crit mod
+                # NOTE: RT settings currently require a shot to do damage equal to or greater than 45% of max armor to even have a chance of TAC
+                # Relevant AIM setting below
+                """/* A weapon must deal this much total damage to a location for through armour crit to roll.  Default 9.  Set to 0 for no threshold.
+                   * A number between 0 and 1 (exclusive) means a fraction of max armour, 0 and -1 means a fraction of current armour,
+                   * while 1 and above means a fixed damage threshold. */
+                
+                  "ThroughArmorCritThreshold": 0.45,
+                """
                 try:
                     weapon_AP_crit_chance_multiplier = data['APCriticalChanceMultiplier']
                     weapon_max_AP_thickness = data['APMaxArmorThickness']
-                    AP_shards_mod = (1 + (1 - 0.5)) * (
-                    data['APArmorShardsMod'])  # hard coded to equal armor value of half of APMaxArmorThickness
+                    AP_shards_mod = (1 + (1 - 0.5)) * (data['APArmorShardsMod'])  # hard coded to equal armor value of half of APMaxArmorThickness
                     AP_thickness_mod = 0.5  # hard coded value to represent percentage of APMaxArmorThickness remaining on target, this checks at 50%
                     weapon_TAC = float("{:0.6f}".format(0.1 * AP_shards_mod * AP_thickness_mod * weapon_AP_crit_chance_multiplier))
                     if logging:
