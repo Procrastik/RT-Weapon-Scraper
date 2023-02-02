@@ -110,7 +110,7 @@ _**Max Range Damage**_ - Damage expected at max range including falloff in appli
 
 _**Weapon AAA Factor %**_ - Percentage bonus to mech AAA factor provided by this weapon. I do not know know much about this mechanic so can't say how this interacts with the AAA factor beyond the bonus.
 
-
+____________________________________________________________________________________________________________________________________________________________________
 
 _**AMS Sheet**_ - The separate AMS sheet contains basic info about most AMS systems, due to the culling of most of the many modes that previous versions contained I now only check for the base mode stats and there are not any secondary AMS modes that would get much regular use. Currently this tool excludes special and unique equipment due to their oft complexity and general non-standard setups so many or all of the chassis fixed AMS systems will not be included.
 
