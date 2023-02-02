@@ -122,8 +122,9 @@ def get_to_work():
     ammotype_heatdam_dict = {}
     ammotype_heatdam_best_dict = {}
     ammotype_doescluster_dict = {}
-    ammotype_dam_multi_dict = {}
-    ammotype_dam_multi_best_dict = {}
+    ammotype_BallisticDamagePerPallet = {} # TODO this is currently captured but unused; may need to use it in the weapon damage module if it takes ammo into account as this should fix the absurd heat damage of some fringe heat values
+    ammotype_dam_multi_dict = {} # TODO need to mirror these for ammo heat multiplier
+    ammotype_dam_multi_best_dict = {} # TODO need to mirror these for ammo heat multiplier
     ammotype_dam_AOE_dict = {}
     ammotype_dam_AOE_best_dict = {}
     ammotype_radius_AOE_dict = {}
@@ -199,8 +200,13 @@ def get_to_work():
                                 print('No ProjectilesPerShot on ammo; Defaulting to 1.')
 
                         try:
-                            if float(data['DamagePerShot']) * ammotype_dam_multiplier * ammotype_ShotsWhenFired * ammotype_ProjectilesWhenFired > 0:
-                                ammotype_dam_dict[data['Category']] = data['DamagePerShot'] * ammotype_ShotsWhenFired * ammotype_ProjectilesWhenFired
+                            ammo_DamagePerShot = data['DamagePerShot']
+                            if data['BallisticDamagePerPallet']:
+                                if logging:
+                                    print('BallisticDamagePerPallet on ammo')
+                                ammo_DamagePerShot /= ammotype_ProjectilesWhenFired
+                            if float(ammo_DamagePerShot * ammotype_dam_multiplier * ammotype_ShotsWhenFired * ammotype_ProjectilesWhenFired) > 0:
+                                ammotype_dam_dict[data['Category']] = ammo_DamagePerShot * ammotype_ShotsWhenFired * ammotype_ProjectilesWhenFired
                                 ammotype_dam_best_dict[data['Category']] = f.name
                                 ammotype_dam_multi_dict[data['Category']] = ammotype_dam_multiplier
                                 if logging:
@@ -222,29 +228,33 @@ def get_to_work():
                             if logging:
                                 print('Dampershot ', ammotype_dam_dict[data['Category']])
 
-                        try: # TODO check this
+                        try: # TODO check this - add HeatMultiplier check ehre
                             if data['HeatDamagePerShot'] > 0:
                                 ammotype_heatdam_dict[data['Category']] = data['HeatDamagePerShot']
                                 ammotype_heatdam_best_dict[data['Category']] = f.name
                                 if logging:
-                                    print('Heatdam ', ammotype_heatdam_dict[data['Category']])
+                                    print('Ammo Heatdam ', ammotype_heatdam_dict[data['Category']])
                             else:
                                 if logging:
                                     print('No HeatDamagePerShot on ammo; Defaulting to 0.')
                                 ammotype_heatdam_dict[data['Category']] = 0
                                 ammotype_heatdam_best_dict[data['Category']] = f.name
                                 if logging:
-                                    print('Heatdam ', ammotype_heatdam_dict[data['Category']])
+                                    print('Ammo Heatdam ', ammotype_heatdam_dict[data['Category']])
                         except KeyError:
                             if logging:
                                 print('No HeatDamagePerShot on ammo; Defaulting to 0.')
                             ammotype_heatdam_dict[data['Category']] = 0
                             ammotype_heatdam_best_dict[data['Category']] = f.name
                             if logging:
-                                print('Heatdam ', ammotype_heatdam_dict[data['Category']])
+                                print('Ammo Heatdam ', ammotype_heatdam_dict[data['Category']])
 
                         try:
                             if data['HitGenerator'] == 'Cluster':
+                                ammotype_doescluster_dict[data['Category']] = True
+                                if logging:
+                                    print(ammotype_doescluster_dict[data['Category']], ' does cluster!')
+                            elif data['HitGenerator'] == 'Streak':
                                 ammotype_doescluster_dict[data['Category']] = True
                                 if logging:
                                     print(ammotype_doescluster_dict[data['Category']], ' does cluster!')
@@ -258,6 +268,20 @@ def get_to_work():
                             ammotype_doescluster_dict[data['Category']] = False
                             if logging:
                                 print(ammotype_doescluster_dict[data['Category']], ' does not Cluster')
+
+                        try:
+                            if data['BallisticDamagePerPallet'] == 'true':
+                                ammotype_BallisticDamagePerPallet[data['Category']] = True
+                                if logging:
+                                    print(ammotype_BallisticDamagePerPallet[data['Category']], ' BallisticDamagePerPallet detected on ammo, damage will be divided by ProjectilesPerShot')
+                            else:
+                                ammotype_BallisticDamagePerPallet[data['Category']] = False
+                                if logging:
+                                    print(ammotype_BallisticDamagePerPallet[data['Category']], ' BallisticDamagePerPallet false detected on ammo, damage will calculated normally')
+                        except KeyError:
+                            ammotype_BallisticDamagePerPallet[data['Category']] = False
+                            if logging:
+                                print(ammotype_BallisticDamagePerPallet[data['Category']], 'No BallisticDamagePerPallet detected on ammo, damage will calculated normally')
 
                         try:
                             if data['AOEDamage'] > 0:
@@ -319,7 +343,7 @@ def get_to_work():
                                 elif ammotype_dam_multi_dict[data['Category']] == ammotype_dam_multiplier:
                                     ammotype_dam_best_dict[data['Category']] = 'Multiple'
 
-                        try: # TODO and check this
+                        try: # TODO and check this - add HeatMultiplier check here
                             if data['HeatDamagePerShot'] > ammotype_heatdam_dict[data['Category']]:
                                 ammotype_heatdam_dict[data['Category']] = data['HeatDamagePerShot']
                                 ammotype_heatdam_best_dict[data['Category']] = f.name
@@ -494,6 +518,7 @@ def get_to_work():
                     continue
 
                 # weapon damage module - pulls the highest damage from base + any available modes and sets value to weapon_damage variable
+                # TODO mirror this whole thing for weapon heat damage and multiplier in modes
                 try:
                     max_mode_dam = 0  # set value of highest additional damage in modes
                     max_dam_mode = 0  # set value of highest additional damage mode
@@ -762,11 +787,11 @@ def get_to_work():
                     try:
                         weapon_recoil = data['RefireModifier']
                         if logging:
-                            print('No recoil in modes, defaulting to base', 'Recoil ' + str(weapon_recoil))
+                            print('No recoil in modes, defaulting to base', 'recoil ' + str(weapon_recoil))
                         current_row.append(weapon_recoil)
                     except KeyError:
                         if logging:
-                            print('No Refire Modifier on this weapon')
+                            print('No RefireModifier on this weapon')
                         current_row.append(0)
 
                 # Weapon base mode module
@@ -789,7 +814,7 @@ def get_to_work():
                                 weapon_base_damage = data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired'])
                 except KeyError:  # This will catch errors when a weapon has no modes.
                     if logging:
-                        print('No modes, reverting to base values')
+                        print('No modes field exists on weapon, reverting to base values')
                     weapon_base_damage = data['Damage'] * (data['ProjectilesPerShot'] * data['ShotsWhenFired'])  # damage = damage per shot * projectilespershot
                 if logging:
                     print("Base weapon damage ", weapon_base_damage)
@@ -838,9 +863,31 @@ def get_to_work():
                         print('Weapon has no ammo')
                     current_row.append('N/A')
                 except IndexError:
-                    current_row.append('N/A')
-                    if logging:
-                        print('Something weird is going on with this weapon or ammo')
+                    if not data['Modes']: # Checks if Modes field exists but is empty
+                        if logging:
+                            print('Modes field exists on weapon but is empty, reverting to base values')
+                        try:
+                            if data['ShotsWhenFired'] == 0:
+                                current_row.append(ammotype_dam_dict[data['AmmoCategory']])
+                                if logging:
+                                    print('Weapon has no modes but combined ammo salvo value is ',
+                                          ammotype_dam_dict[data['AmmoCategory']])
+                            else:
+                                current_row.append(ammotype_dam_dict[data['AmmoCategory']] * data['ShotsWhenFired'])
+                                if logging:
+                                    print('Weapon has no modes but combined ammo salvo value is ',
+                                          ammotype_dam_dict[data['AmmoCategory']] * data['ShotsWhenFired'])
+                        except KeyError:
+                            try:
+                                current_row.append(ammotype_dam_dict[data['AmmoCategory']])
+                                if logging:
+                                    print('Weapon has no modes or shots but combined ammo salvo value is ',
+                                          ammotype_dam_dict[data['AmmoCategory']])
+                            except KeyError:
+                                current_row.append(0)
+                                if logging:
+                                    print('Weapon has no damage on ammo and a Modes field on weapon that is empty')
+                                    current_row.append('N/A')
 
                 # Weapon most damaging ammotype module
                 try:
@@ -1068,12 +1115,12 @@ def get_to_work():
                         print('No ammo key on this weapon, checking mode and base for heat multiplier')
                     try:
                         weapon_heat_multiplier = data['HeatMultiplier'] * data['Modes'][max_dam_mode]['HeatMultiplier']
-                    except (KeyError, IndexError) as e:
+                    except (KeyError, IndexError):
                         if logging:
                             print('No HeatMultiplier in modes or base, checking in modes only')
                         try:
                             weapon_heat_multiplier = data['Modes'][max_dam_mode]['HeatMultiplier']
-                        except (KeyError, IndexError) as e:
+                        except (KeyError, IndexError):
                             if logging:
                                 print('No HeatMultipler in modes, checking in base')
                             try:
@@ -1089,7 +1136,7 @@ def get_to_work():
                     if logging:
                         print('Heat dam ' + str(weapon_heat_damage))
                     current_row.append(weapon_heat_damage)
-                except (KeyError, IndexError) as e:
+                except (KeyError, IndexError):
                     if logging:
                         print('Either no HeatDamagePerShot in modes, no ShotsWhenFired in modes, or no modes, checking other possibilities in modes')
                     try:
@@ -1097,7 +1144,7 @@ def get_to_work():
                         if logging:
                             print('Heat dam ' + str(weapon_heat_damage))
                         current_row.append(weapon_heat_damage)
-                    except (KeyError, IndexError) as e:
+                    except (KeyError, IndexError):
                         if logging:
                             print('Either no HeatDamagePerShot in modes or no modes, checking other possibilities')
                         try:
@@ -1844,288 +1891,6 @@ def get_to_work():
                                     if logging:
                                         print('This is not an advanced AMS and will not protect allies in this mode')
                                     basemode_aams = 'False'
-                        elif is_AMS and data['Modes'][i]['Id'] == 'Overload':  # Overload mode
-                            if logging:
-                                print('This is Overload Mode')
-                            olmode_ams_damage = 0
-                            try:
-                                olmode_ams_damage = data['Modes'][i]['AMSDamage'] + data['AMSDamage'] + 1
-                                if logging:
-                                    print('Overload AMS damage is ', str(olmode_ams_damage))
-                            except KeyError:
-                                try:
-                                    olmode_ams_damage = data['Modes'][i]['AMSDamage'] + 1
-                                except KeyError:
-                                    try:
-                                        if logging:
-                                            print('No Mode AMS Damage, trying base')
-                                        olmode_ams_damage = data['AMSDamage'] + 1
-                                        if logging:
-                                            print('Overload AMS damage is ', str(olmode_ams_damage))
-                                    except KeyError:
-                                        if logging:
-                                            print('No mode or base AMS Damage, defaulting to 1')
-                                        olmode_ams_damage = 1
-
-                            olmode_ams_hitchance = 0
-                            try:
-                                olmode_ams_hitchance = data['Modes'][i]['AMSHitChance']
-                                if logging:
-                                    print('Overload AMS hitchance is ', str(olmode_ams_hitchance))
-                            except KeyError:
-                                if logging:
-                                    print('No AMS Hitchance in mode, checking base')
-                                try:
-                                    olmode_ams_hitchance = data['AMSHitChance']
-                                    if logging:
-                                        print('Overload AMS hitchance is ', str(olmode_ams_hitchance))
-                                except KeyError:
-                                    if logging:
-                                        print('No AMS Hitchance at all!?')
-
-                            olmode_ams_shots = 0
-                            try:
-                                olmode_ams_shots = data['ShotsWhenFired'] + data['Modes'][i]['ShotsWhenFired']
-                                if logging:
-                                    print('Overload AMS ShotsWhenFired is ', str(olmode_ams_shots))
-                            except KeyError:
-                                if logging:
-                                    print('No ShotsWhenFired in mode or base, checking bas only')
-                                try:
-                                    olmode_ams_shots = data['ShotsWhenFired']
-                                    if logging:
-                                        print('Overload AMS ShotsWhenFired is ', str(olmode_ams_shots))
-                                except KeyError:
-                                    if logging:
-                                        print('No ShotsWhenFired at all?')
-
-                            olmode_ams_avg_damage = 0
-                            try:
-                                olmode_ams_avg_damage = olmode_ams_damage * olmode_ams_shots * olmode_ams_hitchance
-                                if logging:
-                                    print('Overload AMS average damage is ', str(olmode_ams_avg_damage))
-                            except:
-                                if logging:
-                                    traceback.print_exc()
-                                    print('This should not be reachable! AMS avg damage error.')
-
-                            olmode_ams_heat = 0
-                            try:
-                                olmode_ams_heat = data['Modes'][i]['HeatGenerated'] + data['HeatGenerated']
-                                if logging:
-                                    print('Overload AMS heat is ', str(olmode_ams_heat))
-                            except KeyError:
-                                if logging:
-                                    print('No heat in modes or base, trying base.')
-                                try:
-                                    olmode_ams_heat = data['HeatGenerated']
-                                    if logging:
-                                        print('Overload AMS heat is ', str(olmode_ams_heat))
-                                except KeyError:
-                                    if logging:
-                                        print('No heat on AMS, defaulting to 0')
-
-                            olmode_ams_jam = 0
-                            try:
-                                olmode_ams_jam = data['FlatJammingChance'] * 100
-                                try:
-                                    olmode_ams_jam = (data['Modes'][i]['FlatJammingChance'] + data['FlatJammingChance']) * 100
-                                    if logging:
-                                        print('Overload AMS jam chance is ', str(olmode_ams_jam))
-                                except KeyError:
-                                    if logging:
-                                        print('No mode jam chance, using base')
-                            except KeyError:
-                                if logging:
-                                    print('No base jam chance, checking modes')
-                                try:
-                                    olmode_ams_jam = data['Modes'][i]['FlatJammingChance'] * 100
-                                    if logging:
-                                        print('Overload AMS jam chance is ', str(olmode_ams_jam))
-                                except KeyError:
-                                    if logging:
-                                        print('No jam chance on AMS, using zero')
-
-                            olmode_ams_maxrange = 0
-                            try:
-                                olmode_ams_maxrange = data['MaxRange'] + data['Modes'][i]['MaxRange']
-                                if logging:
-                                    print('Overload AMS max range is ', str(olmode_ams_maxrange))
-                            except KeyError:
-                                if logging:
-                                    print('No range boost in either base or mode, trying base value')
-                                try:
-                                    olmode_ams_maxrange = data['MaxRange']
-                                    if logging:
-                                        print('Overload AMS max range is ', str(olmode_ams_maxrange))
-                                except KeyError:
-                                    if logging:
-                                        print('No range in base values, checking only mode')
-                                    olmode_ams_maxrange = data['Modes'][i]['MaxRange']
-                                    if logging:
-                                        print('Overload AMS max range is ', str(olmode_ams_maxrange))
-
-                            olmode_aams = 'False'
-                            try:
-                                if logging:
-                                    print(data['Modes'][i]['IsAAMS'])
-                                if data['Modes'][i]['IsAAMS']:
-                                    if logging:
-                                        print('This is an Advanced AMS and will protect allies')
-                                    olmode_aams = 'True'
-                            except KeyError:
-                                if logging:
-                                    print('No isAAMS tag present in modes, trying base')
-                                try:
-                                    if logging:
-                                        print(data['IsAAMS'])
-                                    if data['IsAAMS']:
-                                        if logging:
-                                            print('This is an Advanced AMS and will protect allies')
-                                        olmode_aams = 'True'
-                                except KeyError:
-                                    if logging:
-                                        print('This is not an advanced AMS and will not protect allies in this mode')
-                                    olmode_aams = 'False'
-
-                        elif is_AMS and data['Modes'][i]['Id'] == 'FullPower':  # FullPower mode for Clan Advanced LAMS only
-                            if logging:
-                                print('This is FullPower Mode')
-                            try:
-                                fpmode_ams_damage = data['Modes'][i]['AMSDamage'] + data['AMSDamage'] + 1
-                                if logging:
-                                    print('FullPower AMS damage is ', str(fpmode_ams_damage))
-                            except KeyError:
-                                try:
-                                    fpmode_ams_damage = data['Modes'][i]['AMSDamage'] + 1
-                                except KeyError:
-                                    try:
-                                        if logging:
-                                            print('No Mode AMS Damage, trying base')
-                                        fpmode_ams_damage = data['AMSDamage'] + 1
-                                        if logging:
-                                            print('FullPower AMS damage is ', str(fpmode_ams_damage))
-                                    except KeyError:
-                                        if logging:
-                                            print('No mode or base AMS Damage, defaulting to 1')
-                                        fpmode_ams_damage = 1
-
-                            fpmode_ams_hitchance = 0
-                            try:
-                                fpmode_ams_hitchance = data['Modes'][i]['AMSHitChance']
-                                if logging:
-                                    print('FullPower AMS hitchance is ', str(fpmode_ams_hitchance))
-                            except KeyError:
-                                if logging:
-                                    print('No AMS Hitchance in mode, checking base')
-                                try:
-                                    fpmode_ams_hitchance = data['AMSHitChance']
-                                    if logging:
-                                        print('FullPower AMS hitchance is ', str(fpmode_ams_hitchance))
-                                except KeyError:
-                                    if logging:
-                                        print('No AMS Hitchance at all!?')
-
-                            fpmode_ams_shots = 0
-                            try:
-                                fpmode_ams_shots = data['ShotsWhenFired'] + data['Modes'][i]['ShotsWhenFired']
-                                if logging:
-                                    print('FullPower AMS ShotsWhenFired is ', str(fpmode_ams_shots))
-                            except KeyError:
-                                if logging:
-                                    print('No ShotsWhenFired in mode or base, checking bas only')
-                                try:
-                                    fpmode_ams_shots = data['ShotsWhenFired']
-                                    if logging:
-                                        print('FullPower AMS ShotsWhenFired is ', str(fpmode_ams_shots))
-                                except KeyError:
-                                    if logging:
-                                        print('No ShotsWhenFired at all?')
-
-                            fpmode_ams_avg_damage = 0
-                            try:
-                                fpmode_ams_avg_damage = fpmode_ams_damage * fpmode_ams_shots * fpmode_ams_hitchance
-                                if logging:
-                                    print('FullPower AMS average damage is ', str(fpmode_ams_avg_damage))
-                            except:
-                                if logging:
-                                    traceback.print_exc()
-                                    print('This should not be reachable! AMS avg damage error.')
-
-                            fpmode_ams_heat = 0
-                            try:
-                                fpmode_ams_heat = data['Modes'][i]['HeatGenerated'] + data['HeatGenerated']
-                                if logging:
-                                    print('FullPower AMS heat is ', str(fpmode_ams_heat))
-                            except KeyError:
-                                if logging:
-                                    print('No heat in modes or base, trying base.')
-                                try:
-                                    fpmode_ams_heat = data['HeatGenerated']
-                                    if logging:
-                                        print('FullPower AMS heat is ', str(fpmode_ams_heat))
-                                except KeyError:
-                                    if logging:
-                                        print('No heat on AMS, defaulting to 0')
-
-                            fpmode_ams_jam = 0
-                            try:
-                                fpmode_ams_jam = data['FlatJammingChance'] * 100
-                                try:
-                                    fpmode_ams_jam = (data['Modes'][i]['FlatJammingChance'] + data['FlatJammingChance']) * 100
-                                    if logging:
-                                        print('FullPower AMS jam chance is ', str(fpmode_ams_jam))
-                                except KeyError:
-                                    if logging:
-                                        print('No mode jam chance, using base')
-                            except KeyError:
-                                if logging:
-                                    print('No base jam chance, checking modes')
-                                try:
-                                    fpmode_ams_jam = data['Modes'][i]['FlatJammingChance'] * 100
-                                    if logging:
-                                        print('FullPower AMS jam chance is ', str(fpmode_ams_jam))
-                                except KeyError:
-                                    if logging:
-                                        print('No jam chance on AMS, using zero')
-
-                            fpmode_ams_maxrange = 0
-                            try:
-                                fpmode_ams_maxrange = data['MaxRange'] + data['Modes'][i]['MaxRange']
-                                if logging:
-                                    print('FullPower AMS max range is ', str(fpmode_ams_maxrange))
-                            except KeyError:
-                                if logging:
-                                    print('No range boost in either base or mode, trying base value')
-                                try:
-                                    fpmode_ams_maxrange = data['MaxRange']
-                                    if logging:
-                                        print('FullPower AMS max range is ', str(fpmode_ams_maxrange))
-                                except KeyError:
-                                    if logging:
-                                        print('No range in base values, checking only mode')
-                                    fpmode_ams_maxrange = data['Modes'][i]['MaxRange']
-                                    if logging:
-                                        print('Overload AMS max range is ', str(fpmode_ams_maxrange))
-
-                            fpmode_aams = 'False'
-                            try:
-                                if data['Modes'][i]['IsAAMS']:
-                                    if logging:
-                                        print('This is an Advanced AMS and will protect allies')
-                                    fpmode_aams = 'True'
-                            except KeyError:
-                                if logging:
-                                    print('No isAAMS tag present in modes, trying base')
-                                try:
-                                    if data['IsAAMS']:
-                                        if logging:
-                                            print('This is an Advanced AMS and will protect allies')
-                                        fpmode_aams = 'True'
-                                except KeyError:
-                                    if logging:
-                                        print('This is not an advanced AMS and will not protect allies in this mode')
-                                    fpmode_aams = 'False'
                         else:
                             if logging:
                                 print('Not an AMS mode, skipping')
