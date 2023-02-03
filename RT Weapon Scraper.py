@@ -121,6 +121,7 @@ def get_to_work():
     ammotype_dam_best_dict = {}
     ammotype_heatdam_dict = {}
     ammotype_heatdam_best_dict = {}
+    ammotype_heatdam_multi_dict = {}
     ammotype_doescluster_dict = {}
     ammotype_BallisticDamagePerPallet = {} # TODO this is currently captured but unused; may need to use it in the weapon damage module if it takes ammo into account as this should fix the absurd heat damage of some fringe heat values
     ammotype_dam_multi_dict = {} # TODO need to mirror these for ammo heat multiplier
@@ -158,7 +159,7 @@ def get_to_work():
                             print('Passed ', item)
     ##
 
-    # This iterates through the identified list of files meeting search criteria, prints the filename and loads them with the json module so you can search them and finally checks if there is any loading errors and adds them to lists to help identify invalid JSONs or bad characters.
+    # This iterates through the ammo_file_list, prints the filename and loads them with the json module so you can search them and finally checks if there is any loading errors and adds them to lists to help identify invalid JSONs or bad characters.
     # Do not combine this with the weapon_file_list because it is twice as fast this way than combined
     for item in ammo_file_list:
         with open(item) as f:
@@ -170,7 +171,9 @@ def get_to_work():
                     ammotype_ShotsWhenFired = 1
                     ammotype_ProjectilesWhenFired = 1
                     ammotype_dam_multiplier = 1.0
-                    if data['Category'] not in ammotype_dam_multi_dict.keys():  # This if block handles building new keys in the dict for ammo types not already in the dict
+                    if data['Category'] not in ammotype_dam_multi_dict.keys():
+                        # This if block handles building new keys in the dict for ammo types not already in the dict
+                        #  TODO add HeatMultiplier and BallisticDamagePerPallet check for ammo heat damage to this block
                         if logging:
                             print('New category, adding')
                         try:
@@ -228,27 +231,49 @@ def get_to_work():
                             if logging:
                                 print('Dampershot ', ammotype_dam_dict[data['Category']])
 
-                        try: # TODO check this - add HeatMultiplier check ehre
-                            if data['HeatDamagePerShot'] > 0:
-                                ammotype_heatdam_dict[data['Category']] = data['HeatDamagePerShot']
+                        # Ammo heat damage and heat damage multiplier module
+                        try:
+                            ammo_heatmultipler = data['HeatMultiplier']
+                        except KeyError:
+                            ammo_heatmultipler = 1.0
+                        try:
+                            ammo_heatdampershot = data['HeatDamagePerShot']
+                        except KeyError:
+                            ammo_heatdampershot = 1.0
+                        try:
+                            if ammo_heatdampershot * ammo_heatmultipler != 0:
+                                ammotype_heatdam_dict[data['Category']] = ammo_heatdampershot
                                 ammotype_heatdam_best_dict[data['Category']] = f.name
+                                ammotype_heatdam_multi_dict[data['Category']] = ammo_heatmultipler
                                 if logging:
-                                    print('Ammo Heatdam ', ammotype_heatdam_dict[data['Category']])
+                                    print('Ammo Heatdam ', ammotype_heatdam_dict[data['Category']], ' with a HeatMultiplier of ', ammo_heatmultipler)
                             else:
-                                if logging:
-                                    print('No HeatDamagePerShot on ammo; Defaulting to 0.')
-                                ammotype_heatdam_dict[data['Category']] = 0
-                                ammotype_heatdam_best_dict[data['Category']] = f.name
-                                if logging:
-                                    print('Ammo Heatdam ', ammotype_heatdam_dict[data['Category']])
+                                if ammo_heatdampershot > 0:
+                                    if logging:
+                                        print('No HeatMultiplier on ammo')
+                                    ammotype_heatdam_dict[data['Category']] = ammo_heatdampershot
+                                    ammotype_heatdam_best_dict[data['Category']] = f.name
+                                    ammotype_heatdam_multi_dict[data['Category']] = 1
+                                    if logging:
+                                        print('Ammo Heatdam ', ammotype_heatdam_dict[data['Category']], ' no HeatMultiplier on ammo, defaulting to 1')
+                                else:
+                                    if logging:
+                                        print('No HeatDamagePerShot or HeatMultiplier on ammo; Defaulting to 0 HeatDamagePerShot and 1 HeatMultiplier.')
+                                    ammotype_heatdam_dict[data['Category']] = 0
+                                    ammotype_heatdam_best_dict[data['Category']] = f.name
+                                    ammotype_heatdam_multi_dict[data['Category']] = 1
+                                    if logging:
+                                        print('Ammo Heatdam ', ammotype_heatdam_dict[data['Category']])
                         except KeyError:
                             if logging:
-                                print('No HeatDamagePerShot on ammo; Defaulting to 0.')
+                                print('KeyError on HeatDamagePerShot or HeatMultiplier for this ammo.')
                             ammotype_heatdam_dict[data['Category']] = 0
                             ammotype_heatdam_best_dict[data['Category']] = f.name
+                            ammotype_heatdam_multi_dict[data['Category']] = 1
                             if logging:
-                                print('Ammo Heatdam ', ammotype_heatdam_dict[data['Category']])
+                                print('Ammo Heatdam ', ammotype_heatdam_dict[data['Category']], ' no HeatMultiplier on ammo, defaulting to 1')
 
+                        # Ammo clustering check module
                         try:
                             if data['HitGenerator'] == 'Cluster':
                                 ammotype_doescluster_dict[data['Category']] = True
@@ -269,8 +294,11 @@ def get_to_work():
                             if logging:
                                 print(ammotype_doescluster_dict[data['Category']], ' does not Cluster')
 
+                        # BallisticDamagePerPallet is a CustomAmmoCategories (CAC) trait on weapons or ammo that causes the weapon or ammo damage to be divided by the ProjectilesPerShot trait
+                        #  Hmm, this will not help me as it will only tell me if one value of ammo is BallisticDamagePerPallet and not necessarily the best one
+                        # TODO add this to the damage module to add a key value for the best ammo type for accurate damage calculations
                         try:
-                            if data['BallisticDamagePerPallet'] == 'true':
+                            if data['BallisticDamagePerPallet']:
                                 ammotype_BallisticDamagePerPallet[data['Category']] = True
                                 if logging:
                                     print(ammotype_BallisticDamagePerPallet[data['Category']], ' BallisticDamagePerPallet detected on ammo, damage will be divided by ProjectilesPerShot')
@@ -281,7 +309,7 @@ def get_to_work():
                         except KeyError:
                             ammotype_BallisticDamagePerPallet[data['Category']] = False
                             if logging:
-                                print(ammotype_BallisticDamagePerPallet[data['Category']], 'No BallisticDamagePerPallet detected on ammo, damage will calculated normally')
+                                print(ammotype_BallisticDamagePerPallet[data['Category']], 'No BallisticDamagePerPallet detected on ammo, damage will be calculated normally')
 
                         try:
                             if data['AOEDamage'] > 0:
@@ -308,7 +336,9 @@ def get_to_work():
                                 print('No AOE range on ammo; Defaulting to 0.')
                             ammotype_radius_AOE_dict[data['Category']] = 0
 
-                    elif data['Category'] in ammotype_dam_multi_dict.keys():  # This block compares existing key values to the currently evaluated ammo type
+                    #  This block compares existing key values to the currently evaluated ammo type and replaces the best values as needed
+                    #  TODO add BallisticDamagePerPallet check for ammo damage calculation to this block
+                    elif data['Category'] in ammotype_dam_multi_dict.keys():
                         if logging:
                             print('Existing category, comparing')
                         try:
@@ -343,7 +373,49 @@ def get_to_work():
                                 elif ammotype_dam_multi_dict[data['Category']] == ammotype_dam_multiplier:
                                     ammotype_dam_best_dict[data['Category']] = 'Multiple'
 
-                        try: # TODO and check this - add HeatMultiplier check here
+
+                        try: # TODO many ammos showing Multiple when there are none, damages show a bit fishy but this may be due to the weapon module that needs to be updated, do that first then come back to this
+                            ammo_heatmultipler = data['HeatMultiplier']
+                        except KeyError:
+                            ammo_heatmultipler = 1
+                        try:
+                            ammo_heatdampershot = data['HeatDamagePerShot']
+                        except KeyError:
+                            ammo_heatdampershot = 1.0
+                        try:
+                            if ammo_heatdampershot * ammo_heatmultipler > ammotype_heatdam_dict[data['Category']]:
+                                ammotype_heatdam_dict[data['Category']] = ammo_heatdampershot
+                                ammotype_heatdam_best_dict[data['Category']] = f.name
+                                ammotype_heatdam_multi_dict[data['Category']] = ammo_heatmultipler
+                                if logging:
+                                    print('New best ammo Heatdam ', ammotype_heatdam_dict[data['Category']], ' with a HeatMultiplier of ', ammo_heatmultipler)
+                            elif ammo_heatdampershot * ammo_heatmultipler == ammotype_heatdam_dict[data['Category']]:
+                                ammotype_heatdam_best_dict[data['Category']] = 'Multiple'
+                                if logging:
+                                    print('Ties best ammo Heatdam ', ammotype_heatdam_dict[data['Category']], ' with a HeatMultiplier of ', ammo_heatmultipler)
+                            else:
+                                if ammo_heatdampershot > ammotype_heatdam_dict[data['Category']]:
+                                    if logging:
+                                        print('No HeatMultiplier on weapon')
+                                    ammotype_heatdam_dict[data['Category']] = ammo_heatdampershot
+                                    ammotype_heatdam_best_dict[data['Category']] = f.name
+                                    ammotype_heatdam_multi_dict[data['Category']] = ammo_heatmultipler
+                                    if logging:
+                                        print('Ne best ammo Heatdam ', ammotype_heatdam_dict[data['Category']], ' no HeatMultiplier on ammo, defaulting to 1')
+                                else:
+                                    if logging:
+                                        print('No HeatDamagePerShot or HeatMultiplier on ammo; Defaulting to 0 HeatDamagePerShot and 1 HeatMultiplier.')
+                                    ammotype_heatdam_dict[data['Category']] = 0
+                                    ammotype_heatdam_best_dict[data['Category']] = f.name
+                                    ammotype_heatdam_multi_dict[data['Category']] = ammo_heatmultipler
+                                    if logging:
+                                        print('Ammo Heatdam ', ammotype_heatdam_dict[data['Category']])
+                        except KeyError:
+                            if logging:
+                                print('No HeatDamagePerShot on ammo; Skipping as key already has an entry of 0 or above')
+
+                        '''
+                        try:  # TODO and check this - add HeatMultiplier check here
                             if data['HeatDamagePerShot'] > ammotype_heatdam_dict[data['Category']]:
                                 ammotype_heatdam_dict[data['Category']] = data['HeatDamagePerShot']
                                 ammotype_heatdam_best_dict[data['Category']] = f.name
@@ -356,6 +428,9 @@ def get_to_work():
                                 print('No HeatDamagePerShot on ammo; Skipping as key already has an entry of 0 or above')
                             if ammotype_heatdam_dict[data['Category']] == 1:
                                 ammotype_heatdam_best_dict[data['Category']] = 'Multiple'
+                        '''
+
+
                         try:
                             if ammotype_doescluster_dict[data['Category']] == False:
                                 if data['HitGenerator'] == 'Cluster':
@@ -463,7 +538,7 @@ def get_to_work():
                                 print('Passed ', item)
     ##
 
-    # this iterates through the identified list of files meeting search criteria, prints the filename and loads them with the json module so you can search them and finally checks if there is any loading errors and adds them to lists to help identify invalid JSONs or bad characters.
+    # This iterates through the weapon_file_list, prints the filename and loads them with the json module so you can search them and finally checks if there is any loading errors and adds them to lists to help identify invalid JSONs or bad characters.
     for item in weapon_file_list:
         with open(item) as f:
             if logging:
@@ -1098,13 +1173,14 @@ def get_to_work():
                                 current_row.append(0)
 
                 # Weapon heat damage multiplier module
+                # TODO left off here, ammos now pull correctly but need to be applied here with collected ammo multiplier and values
                 try:
                     weapon_heat_multiplier = ammotype_heatdam_dict[data['AmmoCategory']]
                     try:
                         weapon_heat_multiplier *= data['HeatMultiplier'] * data['Modes'][max_dam_mode]['HeatMultiplier']
                     except KeyError:
                         if logging:
-                            print('Heat multiplier on ammo but not on mode mode, checking only base and ammo')
+                            print('Heat multiplier on ammo but not on mode, checking only base and ammo')
                         try:
                             weapon_heat_multiplier *= data['HeatMultiplier']
                         except KeyError:
@@ -1131,6 +1207,17 @@ def get_to_work():
                                 weapon_heat_multiplier = 1
 
                 ##weapon heat damage module
+                # TODO will also need to clean this up with the following formulas taken from CAC
+                '''
+                f1  (WeaponBaseDamage + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier
+                        (20 + 40 + 0) * 1 * 0.2
+                        60 * 1 * 0.2
+                        60 * 0.2
+
+                f2  (WeaponHeatDam + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier * WeaponBaseDamage / WeaponHeatDamage
+                    (0 + 40 + 0) * 1 * 0.2 * 20 / 0
+                        40 * 1 * 0.2 * 20 / 0
+                '''
                 try:
                     weapon_heat_damage = (data['HeatDamage'] + data['Modes'][max_dam_mode]['HeatDamagePerShot']) * data['ProjectilesPerShot'] * weapon_heat_multiplier * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])
                     if logging:
@@ -1725,7 +1812,6 @@ def get_to_work():
                 current_row_ams.append(ams_multi_attack)
 
                 # AMS modes everything module
-                # TODO clean this module up, OL and FP modes no longer exist and these check loops can be tossed
                 try:
                     for i in range(len(data['Modes'])):
                         if logging:
