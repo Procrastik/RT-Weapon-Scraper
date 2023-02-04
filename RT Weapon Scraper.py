@@ -593,7 +593,6 @@ def get_to_work():
                     continue
 
                 # weapon damage module - pulls the highest damage from base + any available modes and sets value to weapon_damage variable
-                # TODO mirror this whole thing for weapon heat damage and multiplier in modes
                 try:
                     max_mode_dam = 0  # set value of highest additional damage in modes
                     max_dam_mode = 0  # set value of highest additional damage mode
@@ -904,8 +903,7 @@ def get_to_work():
                         current_row.append(0)
                     else:
                         try:
-                            current_row.append(ammotype_dam_dict[data['AmmoCategory']] * (
-                                        data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']))
+                            current_row.append(ammotype_dam_dict[data['AmmoCategory']] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']))
                             if logging:
                                 print('Combined ammo salvo value is ', ammotype_dam_dict[data['AmmoCategory']] * (
                                             data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']))
@@ -1051,133 +1049,115 @@ def get_to_work():
                         print('No damage variance key!?')
                     current_row.append(0)
 
-                # Weapon stability damage module
+                # DamageNotDivided check on weapon
+                weapon_DamageNotDivided = False
                 try:
-                    if data['ImprovedBallistic'] == True:  # instability is divided among all projectiles per shot
+                    if data['DamageNotDivided'] and data['ImprovedBallistic'] and data['BallisticDamagePerPallet']:
+                        weapon_DamageNotDivided = True
                         if logging:
-                            print('ImprovedBallistic True')
-                        try:
-                            weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['InstabilityMultiplier'] * data['Modes']['InstabilityMultiplier'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
-                            if logging:
-                                print('Stability dam ' + str(weapon_stability_damage))
-                            current_row.append(weapon_stability_damage)
-                        except (KeyError, IndexError, TypeError) as e:
-                            if logging:
-                                print('No modes or no other mode related key, trying another combo (1st try)')
-                            try:
-                                weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['Modes']['InstabilityMultiplier'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
-                                if logging:
-                                    print('Stability dam ' + str(weapon_stability_damage))
-                                current_row.append(weapon_stability_damage)
-                            except (KeyError, IndexError, TypeError) as e:
-                                if logging:
-                                    print('No modes or no other mode related key, trying another combo (2nd try)')
-                                try:
-                                    weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
-                                    if logging:
-                                        print('Stability dam ' + str(weapon_stability_damage))
-                                    current_row.append(weapon_stability_damage)
-                                except (KeyError, IndexError, TypeError) as e:
-                                    if logging:
-                                        print('No modes or no other mode related key, trying another combo (3rd try)')
-                                    try:
-                                        weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
-                                        if logging:
-                                            print('Stability dam ' + str(weapon_stability_damage))
-                                        current_row.append(weapon_stability_damage)
-                                    except (KeyError, IndexError) as e:
-                                        if logging:
-                                            print('No modes, trying base values')
-                                        try:
-                                            weapon_stability_damage = data['Instability'] * data['ShotsWhenFired']  # stability damage = stability damage per shot * shotswhenfired
-                                            if logging:
-                                                print('Stability dam ' + str(weapon_stability_damage))
-                                            current_row.append(weapon_stability_damage)
-                                        except KeyError:
-                                            if logging:
-                                                print('No Stability damage key on this weapon!?')
-                                            current_row.append(0)
-
-                    elif data['ImprovedBallistic'] == False:  # Instability is not divided up across projectiles per shot and is applied fully per projectile.
-                        if logging:
-                            print('ImprovedBallistic False')
-                        try:
-                            weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['InstabilityMultiplier'] * data['Modes']['InstabilityMultiplier'] * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
-                            if logging:
-                                print('Stability dam ' + str(weapon_stability_damage))
-                            current_row.append(weapon_stability_damage)
-                        except (KeyError, IndexError, TypeError) as e:
-                            if logging:
-                                print('No modes or no other mode related key, trying another combo (1st try)')
-                            try:
-                                weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['Modes']['InstabilityMultiplier'] * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
-                                if logging:
-                                    print('Stability dam ' + str(weapon_stability_damage))
-                                current_row.append(weapon_stability_damage)
-                            except KeyError:
-                                if logging:
-                                    print('No modes or no other mode related key, trying another combo (2nd try)')
-                                try:
-                                    weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
-                                    if logging:
-                                        print('Stability dam ' + str(weapon_stability_damage))
-                                    current_row.append(weapon_stability_damage)
-                                except (KeyError, IndexError, TypeError) as e:
-                                    if logging:
-                                        print('No modes or no other mode related key, trying another combo (3rd try)')
-                                    try:
-                                        weapon_stability_damage = data['Instability'] * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
-                                        if logging:
-                                            print('Stability dam ' + str(weapon_stability_damage))
-                                        current_row.append(weapon_stability_damage)
-                                    except (KeyError, IndexError) as e:
-                                        if logging:
-                                            print('No modes, trying base values')
-                                        try:
-                                            weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] * data['ProjectilesPerShot'])  # stability damage = stability damage per shot * shotswhenfired
-                                            if logging:
-                                                print('Stability dam ' + str(weapon_stability_damage))
-                                            current_row.append(weapon_stability_damage)
-                                        except KeyError:
-                                            if logging:
-                                                print('No Stability damage key on this weapon!?')
-                                            current_row.append(0)
-
-                except KeyError:  # if no ImprovedBallistic key found on weapon (Custom Bundle assumes true if not present)
+                            print('Weapon DamageNotDivided, ImprovedBallistic, and BallisticDamagePerPallet are all true. This weapon will not have its heat and stability damage divided by ProjectilesPerShot.')
+                except KeyError:
                     if logging:
-                        print('No ImprovedBallistic key found on weapon, defaulting to true')
+                        print('Weapon will have normal DamageNotDivided and heat and stability damage will be divided by ProjectilesPerShot')
+
+                # Weapon stability damage module
+                if not weapon_DamageNotDivided:  # instability is divided among all projectiles per shot
+                    if logging:
+                        print('DamageNotDivided false')
                     try:
-                        weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                        weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['InstabilityMultiplier'] * data['Modes']['InstabilityMultiplier'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
                         if logging:
                             print('Stability dam ' + str(weapon_stability_damage))
                         current_row.append(weapon_stability_damage)
-                    except (KeyError, IndexError, TypeError) as e:
+                    except (KeyError, IndexError, TypeError):
                         if logging:
-                            print('No modes or no other mode related key, trying another combo')
+                            print('No modes or no other mode related key, trying another combo (1st try)')
                         try:
-                            weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                            weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['Modes']['InstabilityMultiplier'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
                             if logging:
                                 print('Stability dam ' + str(weapon_stability_damage))
                             current_row.append(weapon_stability_damage)
-                        except (KeyError, IndexError) as e:
+                        except (KeyError, IndexError, TypeError):
                             if logging:
-                                print('No modes, trying base values')
+                                print('No modes or no other mode related key, trying another combo (2nd try)')
                             try:
-                                weapon_stability_damage = data['Instability'] * data['ShotsWhenFired']  # stability damage = stability damage per shot * shotswhenfired
+                                weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
                                 if logging:
                                     print('Stability dam ' + str(weapon_stability_damage))
                                 current_row.append(weapon_stability_damage)
-                            except KeyError:
+                            except (KeyError, IndexError, TypeError):
                                 if logging:
-                                    print('No Stability damage key on this weapon!?')
-                                current_row.append(0)
+                                    print('No modes or no other mode related key, trying another combo (3rd try)')
+                                try:
+                                    weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                                    if logging:
+                                        print('Stability dam ' + str(weapon_stability_damage))
+                                    current_row.append(weapon_stability_damage)
+                                except (KeyError, IndexError):
+                                    if logging:
+                                        print('No modes, trying base values')
+                                    try:
+                                        weapon_stability_damage = data['Instability'] * data['ShotsWhenFired']  # stability damage = stability damage per shot * shotswhenfired
+                                        if logging:
+                                            print('Stability dam ' + str(weapon_stability_damage))
+                                        current_row.append(weapon_stability_damage)
+                                    except KeyError:
+                                        if logging:
+                                            print('No Stability damage key on this weapon!?')
+                                        current_row.append(0)
+
+                elif weapon_DamageNotDivided:  # Instability is not divided up across projectiles per shot and is applied fully per projectile.
+                    if logging:
+                        print('DamageNotDivided true')
+                    try: # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                        weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['InstabilityMultiplier'] * data['Modes']['InstabilityMultiplier'] * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'])
+                        if logging:
+                            print('Stability dam ', str(weapon_stability_damage))
+                        current_row.append(weapon_stability_damage)
+                    except (KeyError, IndexError, TypeError):
+                        if logging:
+                            print('No modes or no other mode related key, trying another combo (1st try)')
+                        try: # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                            weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * data['Modes']['InstabilityMultiplier'] * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'])
+                            if logging:
+                                print('Stability dam ',  str(weapon_stability_damage))
+                            current_row.append(weapon_stability_damage)
+                        except (KeyError, IndexError, TypeError):
+                            if logging:
+                                print('No modes or no other mode related key, trying another combo (2nd try)')
+                            try:
+                                weapon_stability_damage = (data['Instability'] + data['Modes']['Instability']) * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                                if logging:
+                                    print('Stability dam ' + str(weapon_stability_damage))
+                                current_row.append(weapon_stability_damage)
+                            except (KeyError, IndexError, TypeError):
+                                if logging:
+                                    print('No modes or no other mode related key, trying another combo (3rd try)')
+                                try:
+                                    weapon_stability_damage = data['Instability'] * ((data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired']) * data['ProjectilesPerShot'])  # stability damage = stability damage per shot * (shotswhenfired + shotswhenfired in modes)
+                                    if logging:
+                                        print('Stability dam ' + str(weapon_stability_damage))
+                                    current_row.append(weapon_stability_damage)
+                                except (KeyError, IndexError):
+                                    if logging:
+                                        print('No modes, trying base values')
+                                    try:
+                                        weapon_stability_damage = data['Instability'] * (data['ShotsWhenFired'] * data['ProjectilesPerShot'])  # stability damage = stability damage per shot * shotswhenfired
+                                        if logging:
+                                            print('Stability dam ' + str(weapon_stability_damage))
+                                        current_row.append(weapon_stability_damage)
+                                    except KeyError:
+                                        if logging:
+                                            print('No Stability damage key on this weapon!?')
+                                        current_row.append(0)
 
                 # Weapon heat damage multiplier module
                 # TODO left off here, ammos now pull correctly but need to be applied here with collected ammo multiplier and values
+                # need to write a block similar to the modes damage check that will find the best heatdamage modes, then I can use that info to find the multiplier of the max mode and come up with final damage
                 try:
-                    weapon_heat_multiplier = ammotype_heatdam_dict[data['AmmoCategory']]
+                    weapon_heat_multiplier = ammotype_heatdam_dict[data['AmmoCategory']] # this is 100% wrong and is pulling the heat damage instead of multiplier
                     try:
-                        weapon_heat_multiplier *= data['HeatMultiplier'] * data['Modes'][max_dam_mode]['HeatMultiplier']
+                        weapon_heat_multiplier *= data['HeatMultiplier'] * data['Modes'][max_dam_mode]['HeatMultiplier'] # TODO need to create a max heatdam mode check for this
                     except KeyError:
                         if logging:
                             print('Heat multiplier on ammo but not on mode, checking only base and ammo')
@@ -1206,17 +1186,217 @@ def get_to_work():
                                     print('No HeatMultiplier in base either, defaulting to 1')
                                 weapon_heat_multiplier = 1
 
-                ##weapon heat damage module
+                # Weapon heat damage module
                 # TODO will also need to clean this up with the following formulas taken from CAC
+                # TODO WIP weapon heatdamage update
                 '''
+                Use f1 if weapon has AlternateHeatDamageCalc: true
                 f1  (WeaponBaseDamage + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier
                         (20 + 40 + 0) * 1 * 0.2
                         60 * 1 * 0.2
                         60 * 0.2
-
+                
+                Use f2 for everything else
                 f2  (WeaponHeatDam + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier * WeaponBaseDamage / WeaponHeatDamage
                     (0 + 40 + 0) * 1 * 0.2 * 20 / 0
                         40 * 1 * 0.2 * 20 / 0
+                '''
+                try:
+                    max_mode_heatdam = 0  # set value of highest additional heatdamage in modes
+                    max_heatdam_mode = 0  # set value of highest additional heatdamage mode
+                    weapon_heatdam = 0  # Heatdamage modes loop max damage value combined with ammo values
+                    for i in range(len(data['Modes'])):  # for loop to iterate over the number of Modes found
+                        if logging:
+                            print('Heatdamage mode', i)
+                        # check for traits in mode
+                        try:
+                            weapon_basedam = data['Damage']
+                            if logging:
+                                print(data['Damage'], ' BaseDamage in this mode')
+                        except KeyError:
+                            if logging:
+                                print('No BaseDamage on this mode, weapon_basedam is zero')
+                            weapon_basedam = 0
+                        try:
+                            mode_HeatDamagePerShot = data['Modes'][i]['HeatDamagePerShot']
+                            if logging:
+                                print(data['Modes'][i]['HeatDamagePerShot'], ' HeatDamagePerShot in this mode')
+                        except KeyError:
+                            if logging:
+                                print('No HeatDamagePerShot on this mode, mode_HeatDamagePerShot is zero')
+                            mode_HeatDamagePerShot = 0
+                        try:
+                            mode_HeatDamage = data['Modes'][i]['HeatDamage']
+                            if logging:
+                                print(data['Modes'][i]['HeatDamage'], ' HeatDamage in this mode')
+                        except KeyError:
+                            if logging:
+                                print('No HeatDamage on this mode, mode_HeatDamage is zero')
+                            mode_HeatDamage = 0
+                        try:
+                            mode_HeatDamageMultiplier = data['Modes'][i]['HeatMultiplier']
+                            if logging:
+                                print(data['Modes'][i]['HeatDamageMultiplier'], ' HeatDamageMultiplier in this mode')
+                        except KeyError:
+                            if logging:
+                                print('No HeatDamageMultiplier on this mode, mode_HeatDamageMultiplier is ome')
+                            mode_HeatDamageMultiplier = 1
+                        try:
+                            mode_ProjectilesPerShot = data['Modes'][i]['ProjectilesPerShot']
+                            if logging:
+                                print(data['Modes'][i]['ProjectilesPerShot'], ' ProjectilesPerShot in this mode')
+                        except KeyError:
+                            if logging:
+                                print('No ProjectilesPerShot on this mode, mode_ProjectilesPerShot is 1 to avoid multiplying by zero')
+                            mode_ProjectilesPerShot = 1
+                        try:
+                            mode_ShotsWhenFired = data['Modes'][i]['ShotsWhenFired']
+                            if logging:
+                                print(data['Modes'][i]['ShotsWhenFired'], ' ShotsWhenFired in this mode')
+                        except KeyError:
+                            if logging:
+                                print('No ShotsWhenFired on this mode, mode_ShotsWhenFired is zero')
+                            mode_ShotsWhenFired = 0
+                        try: # this trait is to confirm which formula to use for heat calculation
+                            mode_AlternateHeatDamageCalc = data['Modes'][i]['AlternateHeatDamageCalc']
+                            if logging:
+                                print(data['Modes'][i]['AlternateHeatDamageCalc'], ' AlternateHeatDamageCalc in this mode')
+                        except KeyError:
+                            if logging:
+                                print('No ShotsWhenFired on this mode, mode_ShotsWhenFired is zero')
+                            mode_AlternateHeatDamageCalc = False
+                        try:
+                            AmmoHeatDamagePerShot = ammotype_heatdam_dict[data['Category']]
+                        except KeyError:
+                            AmmoHeatDamagePerShot = 0
+                            if logging:
+                                print('No Ammo associated with this weapon, AmmoHeatDamagePerShot is zero')
+                        try:
+                            AmmoHeatMultiplier = ammotype_heatdam_multi_dict[data['Category']]
+                        except KeyError:
+                            AmmoHeatMultiplier = 0
+                            if logging:
+                                print('No Ammo associated with this weapon, AmmoHeatMultiplier is zero')
+
+                        if weapon_DamageNotDivided:
+                            if logging:
+                                print('Weapon includes DamageNotDivided, heat damage will be applied to all ProjectilesPerShot and not divided among them')
+                            if mode_AlternateHeatDamageCalc: # Uses heat damage formula one (WeaponBaseDamage + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier
+                                if (weapon_basedam + AmmoHeatDamagePerShot + mode_HeatDamage+ mode_HeatDamagePerShot) * AmmoHeatMultiplier * mode_HeatDamageMultiplier * mode_ProjectilesPerShot > max_mode_heatdam:
+                                    max_mode_heatdam = (data['Damage'] + AmmoHeatDamagePerShot + mode_HeatDamagePerShot) * AmmoHeatMultiplier * mode_HeatDamageMultiplier * mode_ProjectilesPerShot
+                                    max_heatdam_mode = i
+                                    if logging:
+                                        print('The new best mode heatdamage is ', max_mode_heatdam, '. Found in mode, ', max_heatdam_mode)
+                            else: # Uses heat damage formula two this is by far the most common (WeaponHeatDam + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier * WeaponBaseDamage / WeaponHeatDamage
+                                if (data['HeatDamage'] + AmmoHeatDamagePerShot + mode_HeatDamage + mode_HeatDamagePerShot) * AmmoHeatMultiplier * mode_HeatDamageMultiplier > max_mode_heatdam:
+                                    max_mode_heatdam = (data['Damage'] + AmmoHeatDamagePerShot + mode_HeatDamagePerShot) * AmmoHeatMultiplier * mode_HeatDamageMultiplier * mode_ProjectilesPerShot
+                                    max_heatdam_mode = i
+                                    if logging:
+                                        print('The new best mode heatdamage is ', max_mode_heatdam, '. Found in mode, ', max_heatdam_mode)
+                        else: # DamageNotDivided is false
+                            if logging:
+                                print('Weapon does not include DamageNotDivided, heat damage will be applied divided normally across all ProjectilesPerShot')
+                            if mode_AlternateHeatDamageCalc: # Uses heat damage formula one (WeaponBaseDamage + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier
+                                if (weapon_basedam + AmmoHeatDamagePerShot + mode_HeatDamage + mode_HeatDamagePerShot) * AmmoHeatMultiplier * mode_HeatDamageMultiplier > max_mode_heatdam:
+                                    max_mode_heatdam = (data['Damage'] + AmmoHeatDamagePerShot + mode_HeatDamagePerShot) * AmmoHeatMultiplier * mode_HeatDamageMultiplier * mode_ProjectilesPerShot
+                                    max_heatdam_mode = i
+                                    if logging:
+                                        print('The new best mode heatdamage is ', max_mode_heatdam, '. Found in mode, ', max_heatdam_mode)
+                            else: # Uses heat damage formula two this is by far the most common (WeaponHeatDam + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier * WeaponBaseDamage / WeaponHeatDamage
+                                if (data['HeatDamage'] + AmmoHeatDamagePerShot + mode_HeatDamage + mode_HeatDamagePerShot) * AmmoHeatMultiplier * mode_HeatDamageMultiplier > max_mode_heatdam:
+                                    max_mode_heatdam = (data['Damage'] + AmmoHeatDamagePerShot + mode_HeatDamagePerShot) * AmmoHeatMultiplier * mode_HeatDamageMultiplier
+                                    max_heatdam_mode = i
+                                    if logging:
+                                        print('The new best mode heatdamage is ', max_mode_heatdam, '. Found in mode, ', max_heatdam_mode)
+                except KeyError:
+                    if logging:
+                        print('Weapon has no modes, using base values only')
+                    # check for traits in base
+                    try:
+                        weapon_basedam = data['Damage']
+                        if logging:
+                            print(data['Damage'], ' BaseDamage in this mode')
+                    except KeyError:
+                        if logging:
+                            print('No BaseDamage on this mode, weapon_basedam is zero')
+                        weapon_basedam = 0
+                    try:
+                        mode_HeatDamageMultiplier = data['Modes'][i]['HeatMultiplier']
+                        if logging:
+                            print(data['Modes'][i]['HeatDamageMultiplier'], ' HeatDamageMultiplier in this mode')
+                    except KeyError:
+                        if logging:
+                            print('No HeatDamageMultiplier on this mode, mode_HeatDamageMultiplier is ome')
+                        mode_HeatDamageMultiplier = 1
+                    try:
+                        mode_ProjectilesPerShot = data['Modes'][i]['ProjectilesPerShot']
+                        if logging:
+                            print(data['Modes'][i]['ProjectilesPerShot'], ' ProjectilesPerShot in this mode')
+                    except KeyError:
+                        if logging:
+                            print('No ProjectilesPerShot on this mode, mode_ProjectilesPerShot is 1 to avoid multiplying by zero')
+                        mode_ProjectilesPerShot = 1
+                    try:  # this trait is to confirm which formula to use for heat calculation
+                        mode_AlternateHeatDamageCalc = data['Modes'][i]['AlternateHeatDamageCalc']
+                        if logging:
+                            print(data['Modes'][i]['AlternateHeatDamageCalc'], ' AlternateHeatDamageCalc in this mode')
+                    except KeyError:
+                        if logging:
+                            print('No ShotsWhenFired on this mode, mode_ShotsWhenFired is zero')
+                        mode_AlternateHeatDamageCalc = False
+                    try:
+                        AmmoHeatDamagePerShot = ammotype_heatdam_dict[data['Category']]
+                    except KeyError:
+                        AmmoHeatDamagePerShot = 0
+                        if logging:
+                            print('No Ammo associated with this weapon, AmmoHeatDamagePerShot is zero')
+                    try:
+                        AmmoHeatMultiplier = ammotype_heatdam_multi_dict[data['Category']]
+                    except KeyError:
+                        AmmoHeatMultiplier = 0
+                        if logging:
+                            print('No Ammo associated with this weapon, AmmoHeatMultiplier is zero')
+
+                    if weapon_DamageNotDivided:
+                        if logging:
+                            print('Weapon includes DamageNotDivided, heat damage will be applied to all ProjectilesPerShot and not divided among them')
+                        try:
+                            if data['AlternateHeatDamageCalc']: # Uses heat damage formula one (WeaponBaseDamage + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier
+                                if (weapon_basedam + AmmoHeatDamagePerShot) * AmmoHeatMultiplier > max_mode_heatdam:
+                                    max_mode_heatdam = (data['Damage'] + AmmoHeatDamagePerShot) * AmmoHeatMultiplier * data['ProjectilesPerShot']
+                                    if logging:
+                                        print('The best heatdamage is ', max_mode_heatdam)
+                            else: # Uses heat damage formula two this is by far the most common (WeaponHeatDam + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier * WeaponBaseDamage / WeaponHeatDamage
+                                if (data['HeatDamage'] + AmmoHeatDamagePerShot) * AmmoHeatMultiplier > max_mode_heatdam:
+                                    max_mode_heatdam = (data['Damage'] + AmmoHeatDamagePerShot) * AmmoHeatMultiplier * data['ProjectilesPerShot']
+                                    if logging:
+                                        print('The new best heatdamage is ', max_mode_heatdam)
+                        except KeyError:
+                            # Uses heat damage formula two this is by far the most common (WeaponHeatDam + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier * WeaponBaseDamage / WeaponHeatDamage
+                            if (data['HeatDamage'] + AmmoHeatDamagePerShot) * AmmoHeatMultiplier > max_mode_heatdam:
+                                max_mode_heatdam = (data['HeatDamage'] + AmmoHeatDamagePerShot) * AmmoHeatMultiplier * mode_HeatDamageMultiplier * mode_ProjectilesPerShot
+                                if logging:
+                                    print('The new best heatdamage is ', max_mode_heatdam)
+                    else: # DamageNotDivided is false
+                        if logging:
+                            print('Weapon does not include DamageNotDivided, heat damage will be applied divided normally across all ProjectilesPerShot')
+                        if mode_AlternateHeatDamageCalc: # Uses heat damage formula one (WeaponBaseDamage + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier
+                            if (weapon_basedam + AmmoHeatDamagePerShot) * AmmoHeatMultiplier > max_mode_heatdam:
+                                max_mode_heatdam = (data['Damage'] + AmmoHeatDamagePerShot) * AmmoHeatMultiplier
+                                if logging:
+                                    print('The new best mode heatdamage is ', max_mode_heatdam, '. Found in mode, ', max_heatdam_mode)
+                        else: # Uses heat damage formula two this is by far the most common (WeaponHeatDam + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier * WeaponBaseDamage / WeaponHeatDamage
+                            if (data['HeatDamage'] + AmmoHeatDamagePerShot) * AmmoHeatMultiplier > max_mode_heatdam:
+                                max_mode_heatdam = (data['HeatDamage'] + AmmoHeatDamagePerShot) * AmmoHeatMultiplier
+                                if logging:
+                                    print('The new best mode heatdamage is ', max_mode_heatdam, '. Found in mode, ', max_heatdam_mode)
+
+                weapon_heat_damage = max_mode_heatdam
+                weapon_heat_damage *= (max_mode_shots + data['ShotsWhenFired'])
+                current_row.append(weapon_heat_damage) # TODO this still does not work and only reports 0
+
+
+                # TODO need to rewrite the heatdamage mode checks to find the best mode, then find the multiplier of that mode, then use those values here. I could simplify this by using variables from those blocks instead of direct values.
                 '''
                 try:
                     weapon_heat_damage = (data['HeatDamage'] + data['Modes'][max_dam_mode]['HeatDamagePerShot']) * data['ProjectilesPerShot'] * weapon_heat_multiplier * (data['ShotsWhenFired'] + data['Modes'][max_dam_mode]['ShotsWhenFired'])
@@ -1243,6 +1423,7 @@ def get_to_work():
                             if logging:
                                 print('No heat damage key on this weapon!?')
                             current_row.append(0)
+                '''
 
                 # Weapon most heat damage ammotype damage value module
                 try:
@@ -1330,7 +1511,7 @@ def get_to_work():
                             print('No base flat jamming chance key, using modes ' + str(weapon_flat_jam) + '%')
                     except (KeyError, IndexError) as e:
                         try:
-                            pattern = '^wr-jam_chance_multiplier-[0-9]+'
+                            pattern = '^wr-jam_chance_multiplier-[0-9]+' # TODO this has been deprecated by 1.0.4 release can remove but will be replaced by 'RecoilJamminChance'
                             for i in data['ComponentTags']['items']:
                                 try:
                                     multiplier = int(re.match(pattern, i).group()[-1])
