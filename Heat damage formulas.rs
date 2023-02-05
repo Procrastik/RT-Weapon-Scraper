@@ -1,5 +1,7 @@
+If weapon has AlternateHeatDamageCalc: true, use formula 1
 formula one baseDamage + extAmmunitionDef.HeatDamagePerShot + weaponMode.HeatDamagePerShot) * extAmmunitionDef.HeatMultiplier * weaponMode.HeatMultiplier;
 
+Everything else use this formula
 formula two (weapon.get_weaponDef().get_HeatDamage() + extAmmunitionDef.HeatDamagePerShot + weaponMode.HeatDamagePerShot) * extAmmunitionDef.HeatMultiplier * weaponMode.HeatMultiplier * baseDamage / weapon.get_weaponDef().get_HeatDamage();
 
 f1  (WeaponBaseDamage + AmmoHeatDamagePerShot + WeaponModeHeatDamagePerShot) * AmmoHeatMultiplier * WeaponModeHeatMultiplier

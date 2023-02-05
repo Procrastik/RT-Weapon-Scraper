@@ -1,0 +1,2 @@
+B:/SteamLibrary/steamapps/common/BATTLETECH/Mods\Core\CustomActivatableEquipment\ExperimentalGear\weapons\Weapon_PPC_LPPCER_3.json
+B:/SteamLibrary/steamapps/common/BATTLETECH/Mods\Core\RogueModuleTech\AddOn\BoltOn\BoltOn_Weapon_Missile_LightAA_Twin.json
