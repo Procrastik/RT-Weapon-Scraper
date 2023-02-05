@@ -50,15 +50,17 @@ _**Highest Direct Damage Ammo**_ - The name of the highest direct damaging ammo.
 
 _**AOE Damage**_ - AOE damage provided by the weapon and its most damaging AOE ammo. This also captures TAG weapons that have a deferredEffect such as TAG Arrow IV. Does not account for AOE falloff as you get farther from the impact point.
 
+_**AOE Heat Damage**_ - AOE Heat damage provided by the weapon and its most damaging AOE Heat ammo. This also captures TAG weapons that have a deferredEffect such as TAG Barrage. Does not account for AOE falloff as you get farther from the impact point.
+
 _**AOE Radius**_ - Radius in meters from impact that AOE Damage will impact including ammo. This also captures TAG weapons that have a deferredEffect such as TAG Arrow IV.
 
 _**Damage Variance**_ - The damage variance value (+ or -) of the weapon.
 
-_**Max Stability Damage**_ - The absolute maximum possible stability damage the weapon can do in its highest damaging mode (as this is likely always the most destabilizing mode as well). Does not account for ammo bonuses.
+_**Max Stability Damage**_ - The absolute maximum possible stability damage the weapon can do in its highest damaging mode (as this is likely always the most destabilizing mode as well). Does not account for ammo bonuses at this time.
 
-_**Max Heat Damage**_ - The absolute maximum possible heat damage the weapon can do in its spiciest mode or base including the best heat ammo if applicable.
+_**Max Heat Damage**_ - The absolute maximum possible heat damage the weapon can do in its spiciest mode or base including the best heat ammo if applicable. (Includes everything, weapon base values, best mode values, ammo values and bonuses as as well as number of shots fired)
 
-_**Max Ammo Heat Damage**_ - The direct heat damage value of the spiciest ammo type.
+_**Max Per Ammo Heat Damage**_ - The per shot direct heat damage value of the spiciest ammo type. (Includes ammo damage and multipliers only; Does not account for weapon modifiers.)
 
 _**Highest Direct Heat Damage Ammo**_ - The name of the spiciest ammo type.
 
