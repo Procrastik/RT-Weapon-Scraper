@@ -1,4 +1,6 @@
 # RT Weapon Scraper
+Note: I am working on this project alone and as such, have a very limited ability to verify data aside from spot checks and code research. If you enjoy this tool, please help me out by pointing out any innaccuracies you may find so that I may address them. I am active on the RogueTech discord server as Procrastk if you wish to reach out to me.
+
 **RT Weapon Scraper**
 This tool is a weapon spreadsheetizer that pulls all weapons and pertinent data for them in the entire mod directory into a spreadsheet for comparisons.
 This tool also does JSON and Unicode verification. This tool is written with Python 3 and utilizes the libraries os, sys, json, traceback, pandas, time, re, and tkinter.
